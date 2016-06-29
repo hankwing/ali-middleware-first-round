@@ -186,7 +186,7 @@ public class PaySpout implements IRichSpout {
 		// TODO Auto-generated method stub
 
 	}
-
+  
 	@Override
 	public void deactivate() {
 		// TODO Auto-generated method stub

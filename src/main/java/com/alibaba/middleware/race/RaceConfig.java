@@ -12,7 +12,7 @@ public class RaceConfig implements Serializable {
     	"PartialResultsBolt", "ResultBolt"};
 
     //这些jstorm/rocketMq/tair 的集群配置信息，这些配置信息在正式提交代码前会被公布
-    public static String JstormTopologyName = "RUC";
+    public static String JstormTopologyName = "RUC";  
     //public static String MetaConsumerGroup = "test";
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
