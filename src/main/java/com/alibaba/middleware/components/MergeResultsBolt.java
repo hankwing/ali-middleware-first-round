@@ -16,6 +16,9 @@ import java.util.TimerTask;
 
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.tools.PartialResult;
+import com.esotericsoftware.minlog.Log;
+import com.taobao.tair.ResultCode;
+import com.taobao.tair.impl.DefaultTairManager;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -37,6 +40,7 @@ public class MergeResultsBolt implements IBasicBolt {
 	private int numberOfPartialResults = 0;
 	private Timer cleanupTimer = null;
 	private int numSlots = 0;
+	private DefaultTairManager tairManager = null;
 	
 	public MergeResultsBolt( int numSlots) {
 		this.numSlots = numSlots;
@@ -61,57 +65,19 @@ public class MergeResultsBolt implements IBasicBolt {
 		resultList = new HashMap<Long, List<PartialResult>>();
 		numberOfPartialResults = context.getComponentTasks
 				(RaceConfig.ComponentPartialResultBolt).size();
-		cleanupTimer = new Timer();
-		// cleanup too old results
-		cleanupTimer.schedule(new TimerTask() {
+		
+		List<String> confServers = new ArrayList<String>();
+		confServers.add(RaceConfig.TairConfigServer);
+		confServers.add(RaceConfig.TairSalveConfigServer);
 
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				List<Long> times = new ArrayList<Long>();
-				for( Long time : resultList.keySet()) {
-					times.add(time);
-				}
-				times.sort(null);
-				while( times.size() > numSlots) {
-					System.out.println("clean up final results: need to decrease partial bolts");
-					
-					List<PartialResult> partResults = resultList.get(times.get(0));
-					Double tmallTrade = 0.0;
-					Double taobaoTrade = 0.0;
-					Double PC = 0.0;
-					Double Mobile = 0.0;
-					for(PartialResult temp : partResults) {
-						tmallTrade += temp.tmallTrade;
-						taobaoTrade += temp.taobaoTrade;
-						PC += temp.PC;
-						Mobile += temp.mobile;
-					}
-					try {
-						Long time = times.get(0) * 60;
-						writer.write("key: " + RaceConfig.prex_tmall + 
-								time + " value:" + String.format("%.2f",tmallTrade) + "\n");
-						writer.write("key: " + RaceConfig.prex_taobao + 
-								time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
-						writer.write("key: " + RaceConfig.prex_ratio + 
-								time + "mobile_value:" + String.format("%.2f",Mobile) + "\n");
-						writer.write("key: " + RaceConfig.prex_ratio + 
-								time + "pc_value:" + String.format("%.2f",PC) + "\n");
-						writer.write("key: " + RaceConfig.prex_ratio + 
-								time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
-						
-						writer.flush();
-						times.remove(0);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-				}
-				
-			}
-			
-		}, RaceConfig.cleanupIntervel, RaceConfig.cleanupIntervel);
+		// 创建客户端实例
+		tairManager = new DefaultTairManager();
+		tairManager.setConfigServerList(confServers);
+
+		// 设置组名
+		tairManager.setGroupName(RaceConfig.TairGroup);
+		 //初始化客户端
+		tairManager.init();
 		
 		try {
 			fos = new FileOutputStream("result");
@@ -153,9 +119,9 @@ public class MergeResultsBolt implements IBasicBolt {
 				PC += temp.PC;
 				Mobile += temp.mobile;
 			}
-			try {
+			//try {
 				Long time = result.time * 60;
-				writer.write("key: " + RaceConfig.prex_tmall + 
+				/*writer.write("key: " + RaceConfig.prex_tmall + 
 						time + " value:" + String.format("%.2f",tmallTrade) + "\n");
 				writer.write("key: " + RaceConfig.prex_taobao + 
 						time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
@@ -166,11 +132,27 @@ public class MergeResultsBolt implements IBasicBolt {
 				writer.write("key: " + RaceConfig.prex_ratio + 
 						time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
 				
-				writer.flush();
-			} catch (IOException e) {
+				writer.flush();*/
+				
+				ResultCode rc1 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_tmall + 
+						time, String.format("%.2f",tmallTrade));
+				ResultCode rc2 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_taobao + 
+						time, String.format("%.2f",taobaoTrade));
+				ResultCode rc3 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_ratio + 
+						time, String.format("%.2f",Mobile / PC));
+				if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
+				    // put成功
+					Log.info("tair success!!:");
+				} else if (ResultCode.VERERROR.equals(rc1)) {
+				    // 版本错误的处理代码
+				} else {
+				    // 其他失败的处理代码
+				}
+				
+			/*} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}*/
 			
 			resultList.remove(result.time);
 			
@@ -193,9 +175,9 @@ public class MergeResultsBolt implements IBasicBolt {
 					PC += temp.PC;
 					Mobile += temp.mobile;
 				}
-				try {
+				//try {
 					Long time = partResults.get(0).time * 60;
-					writer.write("key: " + RaceConfig.prex_tmall + 
+					/*writer.write("key: " + RaceConfig.prex_tmall + 
 							time + " value:" + String.format("%.2f",tmallTrade) + "\n");
 					writer.write("key: " + RaceConfig.prex_taobao + 
 							time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
@@ -206,11 +188,26 @@ public class MergeResultsBolt implements IBasicBolt {
 					writer.write("key: " + RaceConfig.prex_ratio + 
 							time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
 					
-					writer.flush();
-				} catch (IOException e) {
+					writer.flush();*/
+					
+					ResultCode rc1 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_tmall + 
+							time, String.format("%.2f",tmallTrade));
+					ResultCode rc2 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_taobao + 
+							time, String.format("%.2f",taobaoTrade));
+					ResultCode rc3 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_ratio + 
+							time, String.format("%.2f",Mobile / PC));
+					if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
+					    // put成功
+						Log.info("tair success!!:");
+					} else if (ResultCode.VERERROR.equals(rc1)) {
+					    // 版本错误的处理代码
+					} else {
+					    // 其他失败的处理代码
+					}
+				/*} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				}*/
 			}
 			writer.flush();
 			writer.close();

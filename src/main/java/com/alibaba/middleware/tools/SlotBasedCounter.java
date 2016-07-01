@@ -48,10 +48,11 @@ public final class SlotBasedCounter implements Serializable {
 		if (partial == null) {
 			Long mtime = getMinimumTime();
 			if( time < mtime && times.size() >= numSlots ) {
-				System.out.println("need to increase window size!!!!!!!!!!!!!!!!!!!!!!");
+				LOG.info("need to increase window size!!!!!!!!!!!!!");
 				return;
 			}
 			times.add(time);
+			times.sort(null);
 			partial = new PartialResult(time);
 			timeToResults.put(time, partial);
 		}
@@ -82,7 +83,6 @@ public final class SlotBasedCounter implements Serializable {
 	}
 	
 	public Long getMinimumTime() {
-		times.sort(null);
 		Long mTime = 0L;
 		if( times.size() > 0) {
 			mTime = times.get(0);
@@ -96,18 +96,19 @@ public final class SlotBasedCounter implements Serializable {
 	 * @return
 	 */
 	public PartialResult getPartialResult( Map<Long, Map<Long,OrderToBeProcess>> ordersToBeProcess) {
-		times.sort(null);
+
 		PartialResult result = null;
-		LOG.debug("sliding times:" + times.get(0));
-		
-		int errorOrders = ordersToBeProcess.containsKey(times.get(0)) ?
-				ordersToBeProcess.get(times.get(0)).size() : 0;
+		//LOG.info("sliding times:" + times.get(0));
+		Long mTime = getMinimumTime();
+		int errorOrders = ordersToBeProcess.containsKey(mTime) ?
+				ordersToBeProcess.get(mTime).size() : 1;
 
 		// return the minimum time result
 		if( errorOrders < RaceConfig.slidingThreshold ) {
 			// can emit the result
-			result = timeToResults.get(times.get(0));
-			wipeSlot(times.get(0));
+			LOG.info("emit partial result,remaining error orders:{}, time:{}", errorOrders, mTime);
+			result = timeToResults.get(mTime);
+			wipeSlot(mTime);
 			
 		}
 		else {
@@ -121,7 +122,6 @@ public final class SlotBasedCounter implements Serializable {
 	 * @return
 	 */
 	public List<PartialResult> getRemainders() {
-		times.sort(null);
 		List<PartialResult> remainders = new ArrayList<PartialResult>();
 		for( Long time : times) {
 			remainders.add( timeToResults.get(time));

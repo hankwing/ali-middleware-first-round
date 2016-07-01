@@ -9,9 +9,16 @@ import backtype.storm.tuple.Fields;
 import com.alibaba.middleware.components.MergeResultsBolt;
 import com.alibaba.middleware.components.PartialResultsBolt;
 import com.alibaba.middleware.components.PaySpout;
+import com.alibaba.middleware.components.PaySpoutPull;
 import com.alibaba.middleware.components.TaobaoSpout;
+import com.alibaba.middleware.components.TaobaoSpoutPull;
 import com.alibaba.middleware.components.TmallSpout;
+import com.alibaba.middleware.components.TmallSpoutPull;
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.rocketmq.storm.domain.RocketMQConfig;
+import com.alibaba.rocketmq.storm.internal.tools.ConfigUtils;
+import com.alibaba.rocketmq.storm.spout.BatchMessageSpout;
+import com.alibaba.rocketmq.storm.spout.StreamMessageSpout;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,23 +35,26 @@ public class RaceTopology {
 	public static void main(String[] args) throws Exception {
 
 		Config conf = new Config();
+		Config mqConfig = ConfigUtils.init(RaceConfig.PROP_FILE_NAME);
+		//RocketMQConfig mqConig = (RocketMQConfig) mqConfig.get(ConfigUtils.CONFIG_ROCKETMQ);
 		TopologyBuilder builder = new TopologyBuilder();
-
-		builder.setSpout(RaceConfig.ComponentTmallSpout, new TmallSpout(),
+		builder.setSpout(RaceConfig.ComponentSpouts,
+				new PaySpout(), RaceConfig.spout_Parallelism_hint);
+		/*builder.setSpout(RaceConfig.ComponentTmallSpout, new TmallSpoutPull(),
 				RaceConfig.spout_Parallelism_hint);
-		builder.setSpout(RaceConfig.ComponentTaobaoSpout, new TaobaoSpout(),
+		builder.setSpout(RaceConfig.ComponentTaobaoSpout, new TaobaoSpoutPull(),
 				RaceConfig.spout_Parallelism_hint);
 		builder.setSpout(RaceConfig.ComponentPaymentSpout, new PaySpout(),
-				RaceConfig.spout_Parallelism_hint);
+				RaceConfig.spout_Parallelism_hint);*/
 		builder.setBolt(RaceConfig.ComponentPartialResultBolt,
 				new PartialResultsBolt(),
 				RaceConfig.middleBolt_Parallelism_hint)
-				.fieldsGrouping(RaceConfig.ComponentTmallSpout,
-						new Fields("orderID"))
-				.fieldsGrouping(RaceConfig.ComponentTaobaoSpout,
+				.fieldsGrouping(RaceConfig.ComponentSpouts,
+						new Fields("orderID"));
+				/*.fieldsGrouping(RaceConfig.ComponentTaobaoSpout,
 						new Fields("orderID"))
 				.fieldsGrouping(RaceConfig.ComponentPaymentSpout,
-						new Fields("orderID"));
+						new Fields("orderID"));*/
 		builder.setBolt(RaceConfig.ComponentResultBolt,
 				new MergeResultsBolt(RaceConfig.windowLengthInSeconds),
 				RaceConfig.resultBolt_Parallelism_hint).globalGrouping(
