@@ -2,6 +2,8 @@ package com.alibaba.middleware.tools;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.alibaba.middleware.race.RaceConfig;
 import com.esotericsoftware.minlog.Log;
@@ -26,7 +28,7 @@ public class Test {
 		tairManager.init();*/
 		
 		
-		List<String> confServers = new ArrayList<String>();
+		/*List<String> confServers = new ArrayList<String>();
 		confServers.add("192.168.52.128:5198");
 
 		// 创建客户端实例
@@ -36,7 +38,18 @@ public class Test {
 		// 设置组名
 		tairManager.setGroupName("group_1");
 		// 初始化客户端
-		tairManager.init();
+		tairManager.init();*/
+		
+		Timer timer  = new Timer();
+		timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				System.out.println("timer");
+			}
+			
+		}, 10000);
 
 	}
 }

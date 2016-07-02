@@ -76,7 +76,7 @@ public class PartialResultsBolt implements IBasicBolt {
 				slidingReaminderWindow();
 			}
 			
-		}, 16*60*1000);
+		}, 14*60*1000);
 	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
