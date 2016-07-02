@@ -101,7 +101,7 @@ public class MergeResultsBolt implements IBasicBolt {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				Log.info("call result cleanupTimer");
+				LOG.info("call result cleanupTimer");
 				slidingReaminderWindow();
 			}
 			
@@ -179,9 +179,9 @@ public class MergeResultsBolt implements IBasicBolt {
 	
 	public void slidingReaminderWindow() {
 		try {
-			Log.info( "Mergeresult bolt clean up !!!!!!!!!");
+			LOG.info( "Mergeresult bolt clean up !!!!!!!!!");
 			for( List<PartialResult> partResults : resultList.values()) {
-				Log.info( "Mergeresult bolt clean up !!!!!!!!!");
+				LOG.info( "Mergeresult bolt clean up !!!!!!!!!");
 				Double tmallTrade = 0.0;
 				Double taobaoTrade = 0.0;
 				Double PC = 0.0;
