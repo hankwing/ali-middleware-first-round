@@ -51,6 +51,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	protected String id;
 	protected boolean flowControl;
 	protected boolean autoAck;
+	private int suicide = 0;
 
 	protected transient LinkedBlockingDeque<MetaTuple> sendingQueue;
 
@@ -123,22 +124,25 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 					&& body[1] == 0) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
 				LOG.info("stop the topology!!!");
-				Map conf = Utils.readStormConfig();
-				Client client = 
-						NimbusClient.getConfiguredClient(conf).getClient();
-				KillOptions killOpts = new KillOptions();
-				killOpts.set_wait_secs(120); // time to wait before killing
-				try {
-					client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
-							killOpts);
-				} catch (NotAliveException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (TException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if(++suicide >= 3) {
+					Map conf = Utils.readStormConfig();
+					Client client = 
+							NimbusClient.getConfiguredClient(conf).getClient();
+					KillOptions killOpts = new KillOptions();
+					killOpts.set_wait_secs(120); // time to wait before killing
+					try {
+						client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
+								killOpts);
+					} catch (NotAliveException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					continue;
 				}
-				continue;
+				
 			}
 			
 			if( topic.equals(RaceConfig.MqPayTopic)) {
