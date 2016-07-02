@@ -123,8 +123,8 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			if (body.length == 2 && body[0] == 0
 					&& body[1] == 0) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
-				LOG.info("stop the topology!!!");
-				if(++suicide >= 3) {
+				LOG.info("receive stop signs:{}, {}times", body, suicide );
+				/*if(false) {
 					Map conf = Utils.readStormConfig();
 					Client client = 
 							NimbusClient.getConfiguredClient(conf).getClient();
@@ -141,11 +141,9 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 						e.printStackTrace();
 					}
 					continue;
-				}
+				}*/
 				
-			}
-			
-			if( topic.equals(RaceConfig.MqPayTopic)) {
+			}else if( topic.equals(RaceConfig.MqPayTopic)) {
 				PaymentMessage paymentMessage = RaceUtils.readKryoObject(
 						PaymentMessage.class, body);
 				collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
