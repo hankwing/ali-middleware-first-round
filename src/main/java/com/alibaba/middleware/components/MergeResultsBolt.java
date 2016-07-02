@@ -168,9 +168,10 @@ public class MergeResultsBolt implements IBasicBolt {
 	@Override
 	public void cleanup() {
 		// TODO Auto-generated method stub
+		
 		try {
 			for( List<PartialResult> partResults : resultList.values()) {
-				
+				Log.info( "Mergeresult bolt clean up !!!!!!!!!");
 				Double tmallTrade = 0.0;
 				Double taobaoTrade = 0.0;
 				Double PC = 0.0;

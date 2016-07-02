@@ -14,6 +14,7 @@ import com.alibaba.middleware.race.RaceConfig.TradeType;
 import com.alibaba.middleware.race.model.PaymentMessage;
 import com.alibaba.middleware.tools.PartialResult;
 import com.alibaba.middleware.tools.SlidingWindowCounter;
+import com.esotericsoftware.minlog.Log;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -195,6 +196,7 @@ public class PartialResultsBolt implements IBasicBolt {
 	public void cleanup() {
 		// TODO Auto-generated method stub
 		for( PartialResult temp: counter.getRemainResults()) {
+			Log.info( "partial result bolt clean up !!!!!!!!!");
 			_collector.emit(new Values(temp));
 		}
 		
