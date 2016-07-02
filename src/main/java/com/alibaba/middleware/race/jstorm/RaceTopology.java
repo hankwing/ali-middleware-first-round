@@ -66,11 +66,11 @@ public class RaceTopology {
 		conf.setMaxSpoutPending(RaceConfig.max_Spout_Pending);
 
 		try {
-			if (args.length > 0) {
+			//if (args.length > 0) {
 				// cluster mode
 				StormSubmitter.submitTopology(topologyName, conf,
 						builder.createTopology());
-			} else {
+			/*} else {
 				// local mode
 				LocalCluster cluster = new LocalCluster();
 				cluster.submitTopology(topologyName, conf,
@@ -79,7 +79,7 @@ public class RaceTopology {
 				Thread.sleep(600000);
 				cluster.killTopology(RaceConfig.JstormTopologyName);
 				cluster.shutdown();
-			}
+			}*/
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
