@@ -208,6 +208,7 @@ public class PartialResultsBolt implements IBasicBolt {
 	}
 	
 	public void slidingReaminderWindow() {
+		Log.info( "Mergeresult bolt clean up !!!!!!!!!");
 		for( PartialResult temp: counter.getRemainResults()) {
 			Log.info( "partial result bolt clean up !!!!!!!!!");
 			_collector.emit(new Values(temp));

@@ -16,6 +16,7 @@ import com.alibaba.middleware.components.PartialResultsBolt.OrderToBeProcess;
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceConfig.TradeType;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
+import com.esotericsoftware.minlog.Log;
 
 public final class SlotBasedCounter implements Serializable {
 
@@ -124,6 +125,7 @@ public final class SlotBasedCounter implements Serializable {
 	public List<PartialResult> getRemainders() {
 		List<PartialResult> remainders = new ArrayList<PartialResult>();
 		for( Long time : times) {
+			Log.info( "Mergeresult bolt clean up");
 			remainders.add( timeToResults.get(time));
 			wipeSlot(time);
 		}

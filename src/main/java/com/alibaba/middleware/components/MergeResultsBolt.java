@@ -179,6 +179,7 @@ public class MergeResultsBolt implements IBasicBolt {
 	
 	public void slidingReaminderWindow() {
 		try {
+			Log.info( "Mergeresult bolt clean up !!!!!!!!!");
 			for( List<PartialResult> partResults : resultList.values()) {
 				Log.info( "Mergeresult bolt clean up !!!!!!!!!");
 				Double tmallTrade = 0.0;
