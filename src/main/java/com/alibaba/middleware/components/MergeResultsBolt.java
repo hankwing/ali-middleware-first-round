@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.tools.PartialResult;
 import com.esotericsoftware.minlog.Log;
@@ -33,6 +36,7 @@ import backtype.storm.tuple.Tuple;
 public class MergeResultsBolt implements IBasicBolt {
 
 	private static final long serialVersionUID = -3460430184773833659L;
+	private static final Logger LOG = LoggerFactory.getLogger(MergeResultsBolt.class);
 	private Writer writer = null;
 	private FileOutputStream fos = null;
 	private TopologyContext context = null;
@@ -142,11 +146,13 @@ public class MergeResultsBolt implements IBasicBolt {
 						time, String.format("%.2f",Mobile / PC));
 				if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
 				    // put成功
-					Log.info("tair success!!:");
+					LOG.info("tair success!!:");
 				} else if (ResultCode.VERERROR.equals(rc1)) {
 				    // 版本错误的处理代码
+					LOG.info("tair failed because version error!!:");
 				} else {
 				    // 其他失败的处理代码
+					LOG.info("tair failed because other reasons!!:");
 				}
 				
 			/*} catch (IOException e) {
@@ -198,11 +204,13 @@ public class MergeResultsBolt implements IBasicBolt {
 							time, String.format("%.2f",Mobile / PC));
 					if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
 					    // put成功
-						Log.info("tair success!!:");
+						LOG.info("tair success!!:");
 					} else if (ResultCode.VERERROR.equals(rc1)) {
 					    // 版本错误的处理代码
+						LOG.info("tair failed because version error!!:");
 					} else {
 					    // 其他失败的处理代码
+						LOG.info("tair failed because other reasons!!:");
 					}
 				/*} catch (IOException e) {
 					// TODO Auto-generated catch block

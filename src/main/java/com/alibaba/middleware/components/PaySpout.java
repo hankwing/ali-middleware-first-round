@@ -147,7 +147,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 				collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
 						paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
 						paymentMessage.getPayPlatform()));
-				LOG.info("emit {}", paymentMessage);
+				//LOG.info("emit {}", paymentMessage);
 			}
 			else {
 				
@@ -155,7 +155,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	        			OrderMessage.class, body);
 				collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
 						orderMessage.getOrderId(),0,0));
-				LOG.info("emit {}", orderMessage);
+				//LOG.info("emit {}", orderMessage);
 			}
 		}
 	}
