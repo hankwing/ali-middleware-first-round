@@ -123,6 +123,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			if (body.length == 2 && body[0] == 0
 					&& body[1] == 0) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
+				suicide ++;
 				LOG.info("receive stop signs:{}, {}times", body, suicide );
 				/*if(false) {
 					Map conf = Utils.readStormConfig();

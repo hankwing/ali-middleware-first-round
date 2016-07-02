@@ -101,10 +101,11 @@ public class MergeResultsBolt implements IBasicBolt {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				cleanup();
+				Log.info("call result cleanupTimer");
+				slidingReaminderWindow();
 			}
 			
-		}, 18*60*1000);
+		}, 17*60*1000);
 		
 	}
 
@@ -173,6 +174,65 @@ public class MergeResultsBolt implements IBasicBolt {
 			
 			resultList.remove(result.time);
 			
+		}
+	}
+	
+	public void slidingReaminderWindow() {
+		try {
+			for( List<PartialResult> partResults : resultList.values()) {
+				Log.info( "Mergeresult bolt clean up !!!!!!!!!");
+				Double tmallTrade = 0.0;
+				Double taobaoTrade = 0.0;
+				Double PC = 0.0;
+				Double Mobile = 0.0;
+				for(PartialResult temp : partResults) {
+					tmallTrade += temp.tmallTrade;
+					taobaoTrade += temp.taobaoTrade;
+					PC += temp.PC;
+					Mobile += temp.mobile;
+				}
+				//try {
+					Long time = partResults.get(0).time * 60;
+					/*writer.write("key: " + RaceConfig.prex_tmall + 
+							time + " value:" + String.format("%.2f",tmallTrade) + "\n");
+					writer.write("key: " + RaceConfig.prex_taobao + 
+							time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + "mobile_value:" + String.format("%.2f",Mobile) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + "pc_value:" + String.format("%.2f",PC) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
+					
+					writer.flush();*/
+					
+					ResultCode rc1 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_tmall + 
+							time, String.format("%.2f",tmallTrade));
+					ResultCode rc2 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_taobao + 
+							time, String.format("%.2f",taobaoTrade));
+					ResultCode rc3 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_ratio + 
+							time, String.format("%.2f",Mobile / PC));
+					if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
+					    // put成功
+						LOG.info("tair success!!:");
+					} else if (ResultCode.VERERROR.equals(rc1)) {
+					    // 版本错误的处理代码
+						LOG.info("tair failed because version error!!:");
+					} else {
+					    // 其他失败的处理代码
+						LOG.info("tair failed because other reasons!!:");
+					}
+				/*} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}*/
+			}
+			writer.flush();
+			writer.close();
+			fos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
