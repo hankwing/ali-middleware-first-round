@@ -95,6 +95,17 @@ public class MergeResultsBolt implements IBasicBolt {
 			e.printStackTrace();
 		}
 		
+		cleanupTimer = new Timer();
+		cleanupTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				cleanup();
+			}
+			
+		}, 18*60*1000);
+		
 	}
 
 	@Override

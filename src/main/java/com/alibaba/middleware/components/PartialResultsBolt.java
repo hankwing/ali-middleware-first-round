@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
@@ -40,6 +42,8 @@ public class PartialResultsBolt implements IBasicBolt {
 	private Map<Long, Map<Long, Boolean>> tmallOrders = null;
 	private Map<Long, Map<Long, Boolean>> taobaoOrders = null;
 	private BasicOutputCollector _collector = null;
+	
+	private Timer cleanupTimer = null;
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -62,6 +66,16 @@ public class PartialResultsBolt implements IBasicBolt {
 		ordersToBeProcess = new HashMap<Long, Map<Long,OrderToBeProcess>>();
 		tmallOrders = new HashMap<Long, Map<Long,Boolean>>();
 		taobaoOrders = new HashMap<Long, Map<Long,Boolean>>();
+		cleanupTimer = new Timer();
+		cleanupTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				cleanup();
+			}
+			
+		}, 17*60*1000);
 	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
