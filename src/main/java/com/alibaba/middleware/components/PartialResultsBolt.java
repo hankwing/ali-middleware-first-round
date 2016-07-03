@@ -72,11 +72,11 @@ public class PartialResultsBolt implements IBasicBolt {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				Log.info("call cleanupTimer");
+				Log.info("call partial result cleanupTimer");
 				slidingReaminderWindow();
 			}
 			
-		}, 14*60*1000);
+		}, 15*60*1000);
 	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
@@ -208,9 +208,9 @@ public class PartialResultsBolt implements IBasicBolt {
 	}
 	
 	public void slidingReaminderWindow() {
-		Log.info( "Mergeresult bolt clean up !!!!!!!!!");
+		Log.info( "partialResult bolt clean up start!!!!!!!!!");
 		for( PartialResult temp: counter.getRemainResults()) {
-			Log.info( "partial result bolt clean up !!!!!!!!!");
+			Log.info("emit partial result time:{},values:{}", temp.time, new Values(temp));
 			_collector.emit(new Values(temp));
 		}
 	}
@@ -218,10 +218,10 @@ public class PartialResultsBolt implements IBasicBolt {
 	@Override
 	public void cleanup() {
 		// TODO Auto-generated method stub
-		for( PartialResult temp: counter.getRemainResults()) {
+		/*for( PartialResult temp: counter.getRemainResults()) {
 			Log.info( "partial result bolt clean up !!!!!!!!!");
 			_collector.emit(new Values(temp));
-		}
+		}*/
 		
 	}
 

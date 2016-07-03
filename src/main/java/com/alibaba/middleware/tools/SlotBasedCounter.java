@@ -124,11 +124,18 @@ public final class SlotBasedCounter implements Serializable {
 	 */
 	public List<PartialResult> getRemainders() {
 		List<PartialResult> remainders = new ArrayList<PartialResult>();
+		int i,j = 0;
 		LOG.info( "times count:{}",times.size());
 		for( Long time : times) {
-			LOG.info( "Mergeresult bolt clean up");
 			remainders.add( timeToResults.get(time));
 			//wipeSlot(time);
+		}
+		for( i = 0; i < remainders.size()-1 ; i++) {
+			j = i+1;
+			PartialResult temp = remainders.get(i);
+			PartialResult needToModify = remainders.get(j);
+			needToModify.mobile += temp.mobile;
+			needToModify.PC += temp.PC;
 		}
 		return remainders;
 	}
