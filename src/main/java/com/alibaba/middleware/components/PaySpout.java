@@ -120,7 +120,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			
 			String topic = me.getTopic();
 			byte[] body = me.getBody();
-			if (body.length == 2 && body[0] == 0
+			if ( body!= null && body.length == 2 && body[0] == 0
 					&& body[1] == 0) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
 				suicide ++;
