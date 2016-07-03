@@ -158,7 +158,7 @@ public class MergeResultsBolt implements IBasicBolt {
 						time, String.format("%.2f",Mobile / PC));
 				if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
 				    // put成功
-					LOG.info("tair success!!, time:{}, values:{},{},{}",result.time, 
+					LOG.info("tair success!!, time:{}, values:{}, {}, {}",time, 
 							String.format("%.2f",tmallTrade), String.format("%.2f",taobaoTrade),
 									String.format("%.2f",Mobile / PC));
 				} else if (ResultCode.VERERROR.equals(rc1)) {
@@ -217,7 +217,9 @@ public class MergeResultsBolt implements IBasicBolt {
 							time, String.format("%.2f",Mobile / PC));
 					if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
 					    // put成功
-						LOG.info("cleanup tair success!!:");
+						LOG.info("tair success!!, time:{}, values:{}, {}, {}",partResults.get(0).time, 
+								String.format("%.2f",tmallTrade), String.format("%.2f",taobaoTrade),
+										String.format("%.2f",Mobile / PC));
 					} else if (ResultCode.VERERROR.equals(rc1)) {
 					    // 版本错误的处理代码
 						LOG.info("tair failed because version error!!:");

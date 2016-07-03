@@ -80,6 +80,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 			consumer.registerMessageListener(this);
+			consumer.setConsumeMessageBatchMaxSize(100);
 			consumer.start();
 		} catch (Exception e) {
 			LOG.error("Failed to create Meta Consumer ", e);
