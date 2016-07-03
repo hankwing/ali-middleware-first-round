@@ -75,13 +75,13 @@ public class MergeResultsBolt implements IBasicBolt {
 		confServers.add(RaceConfig.TairSalveConfigServer);
 
 		// 创建客户端实例
-		/*tairManager = new DefaultTairManager();
+		tairManager = new DefaultTairManager();
 		tairManager.setConfigServerList(confServers);
 
 		// 设置组名
 		tairManager.setGroupName(RaceConfig.TairGroup);
 		 //初始化客户端
-		tairManager.init();*/
+		tairManager.init();
 		
 		try {
 			fos = new FileOutputStream("result");
