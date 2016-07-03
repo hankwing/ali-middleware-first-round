@@ -159,8 +159,8 @@ public class MergeResultsBolt implements IBasicBolt {
 				if (rc1.isSuccess() && rc2.isSuccess() && rc3.isSuccess()) {
 				    // put成功
 					LOG.info("tair success!!, time:{}, values:{},{},{}",result.time, 
-							String.format("%.2f",tmallTrade, String.format("%.2f",taobaoTrade),
-									String.format("%.2f",Mobile / PC)));
+							String.format("%.2f",tmallTrade), String.format("%.2f",taobaoTrade),
+									String.format("%.2f",Mobile / PC));
 				} else if (ResultCode.VERERROR.equals(rc1)) {
 				    // 版本错误的处理代码
 					LOG.info("tair failed because version error!!:");
