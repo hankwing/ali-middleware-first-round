@@ -37,11 +37,11 @@ public class RaceConfig implements Serializable {
     public static String ComponentPartialResultBolt = "PartialResultBolt";
     public static String ComponentResultBolt = "ResultBolt";
     
-    public static int windowLengthInSeconds = 5;
+    public static int windowLengthInSeconds = 10;
     public static int emitFrequencyInSeconds = 1;
     
     public static int spout_Parallelism_hint = 1;
-    public static int middleBolt_Parallelism_hint = 2;
+    public static int middleBolt_Parallelism_hint = 4;
     public static int resultBolt_Parallelism_hint = 1;
     public static int ackBolt_Parallelism_hint = 1;
     public static int worker_Number = 4;
