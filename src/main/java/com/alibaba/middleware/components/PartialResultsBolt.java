@@ -44,6 +44,7 @@ public class PartialResultsBolt implements IBasicBolt {
 	private BasicOutputCollector _collector = null;
 	
 	private Timer cleanupTimer = null;
+	private boolean isEnd = true;
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -66,17 +67,24 @@ public class PartialResultsBolt implements IBasicBolt {
 		ordersToBeProcess = new HashMap<Long, Map<Long,OrderToBeProcess>>();
 		tmallOrders = new HashMap<Long, Map<Long,Boolean>>();
 		taobaoOrders = new HashMap<Long, Map<Long,Boolean>>();
+		// check every 30 secs
 		cleanupTimer = new Timer();
 		cleanupTimer.schedule(new TimerTask() {
 
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				Log.info("call partial result cleanupTimer");
-				slidingReaminderWindow();
+				if(isEnd) {
+					Log.info("call partial result cleanupTimer");
+					slidingReaminderWindow();
+					// then cancel the timer
+					this.cancel();
+				}
+				isEnd = true;
+				
 			}
 			
-		}, 15*60*1000);
+		}, 5*60*1000, 30*1000);
 	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
@@ -87,6 +95,10 @@ public class PartialResultsBolt implements IBasicBolt {
 	@Override
 	public void execute(Tuple input, BasicOutputCollector collector) {
 		// TODO Auto-generated method stub
+		if(isEnd) {
+			// mark the bolt is continuing
+			isEnd = false;
+		}
 		// 3 types of input: tmall, taobao, payment
 		if( _collector == null) {
 			_collector = collector;

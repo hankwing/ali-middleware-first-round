@@ -105,7 +105,7 @@ public class MergeResultsBolt implements IBasicBolt {
 				slidingReaminderWindow();
 			}
 			
-		}, 16*60*1000);
+		}, 17*60*1000);
 		
 	}
 
