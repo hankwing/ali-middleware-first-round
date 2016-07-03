@@ -107,8 +107,8 @@ public final class SlotBasedCounter implements Serializable {
 		// return the minimum time result
 		if( errorOrders < RaceConfig.slidingThreshold ) {
 			// can emit the result
-			LOG.info("emit partial result,remaining error orders:{}, time:{},values:{}", errorOrders,
-					mTime, result);
+			LOG.info("emit partial result,remaining error orders:{}, time:{}", errorOrders,
+					mTime);
 			result = timeToResults.get(mTime);
 			wipeSlot(mTime);
 			

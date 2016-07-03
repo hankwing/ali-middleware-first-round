@@ -222,7 +222,7 @@ public class PartialResultsBolt implements IBasicBolt {
 	public void slidingReaminderWindow() {
 		Log.info( "partialResult bolt clean up start!!!!!!!!!");
 		for( PartialResult temp: counter.getRemainResults()) {
-			Log.info("emit remaining partial result time:{},values:{}", temp.time, new Values(temp));
+			Log.info("emit remaining partial result time:{}", temp.time);
 			_collector.emit(new Values(temp));
 		}
 	}

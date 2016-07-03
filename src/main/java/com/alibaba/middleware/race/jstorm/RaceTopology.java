@@ -62,7 +62,7 @@ public class RaceTopology {
 		String topologyName = RaceConfig.JstormTopologyName;
 
 		conf.setNumWorkers(RaceConfig.worker_Number);
-		//conf.setNumAckers(RaceConfig.ackBolt_Parallelism_hint);
+		conf.setNumAckers(RaceConfig.ackBolt_Parallelism_hint);
 		conf.setMaxSpoutPending(RaceConfig.max_Spout_Pending);
 
 		try {
