@@ -168,7 +168,12 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	public void nextTuple() {
 
 		MetaTuple metaTuple = null;
-		metaTuple = sendingQueue.poll();
+		try {
+			metaTuple = sendingQueue.take();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		if (metaTuple == null) {
 			return;
@@ -194,22 +199,22 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		try {
 			MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
 
-			if (flowControl) {
-				sendingQueue.offer(metaTuple);
-			} else {
+			//if (flowControl) {
+			//	sendingQueue.offer(metaTuple);
+			//} else {
 				sendTuple(metaTuple);
-			}
+			//}
 
-			if (autoAck) {
+			//if (autoAck) {
 				return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-			} else {
+			/*} else {
 				metaTuple.waitFinish();
 				if (metaTuple.isSuccess() == true) {
 					return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 				} else {
 					return ConsumeConcurrentlyStatus.RECONSUME_LATER;
 				}
-			}
+			}*/
 
 		} catch (Exception e) {
 			LOG.error("Failed to emit " + id, e);
