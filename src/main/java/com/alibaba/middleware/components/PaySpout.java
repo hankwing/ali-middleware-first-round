@@ -79,7 +79,8 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 			consumer.registerMessageListener(this);
-			consumer.setConsumeMessageBatchMaxSize(100);
+			consumer.setConsumeMessageBatchMaxSize(1000);
+			consumer.setPullBatchSize(1000);
 			consumer.start();
 		} catch (Exception e) {
 			LOG.error("Failed to create Meta Consumer ", e);
@@ -198,22 +199,22 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		try {
 			MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
 
-			if (flowControl) {
-				sendingQueue.offer(metaTuple);
-			} else {
-				sendTuple(metaTuple);
-			}
+			//if (flowControl) {
+			//	sendingQueue.offer(metaTuple);
+			//} else {
+			sendTuple(metaTuple);
+			//}
 
-			if (autoAck) {
+			//if (autoAck) {
 				return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-			} else {
+			/*} else {
 				metaTuple.waitFinish();
 				if (metaTuple.isSuccess() == true) {
 					return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 				} else {
 					return ConsumeConcurrentlyStatus.RECONSUME_LATER;
 				}
-			}
+			}*/
 
 		} catch (Exception e) {
 			LOG.error("Failed to emit " + id, e);
