@@ -71,7 +71,6 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		// initMetricClient(context);
 
 		try {
-			//consumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup + System.currentTimeMillis());
 			consumer = new DefaultMQPushConsumer(RaceConfig.MetaConsumerGroup);
 			//consumer.setNamesrvAddr(RaceConfig.MqConfigServer);	// need to delete when in competition
 			
@@ -199,22 +198,22 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		try {
 			MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
 
-			//if (flowControl) {
-			//	sendingQueue.offer(metaTuple);
-			//} else {
+			if (flowControl) {
+				sendingQueue.offer(metaTuple);
+			} else {
 				sendTuple(metaTuple);
-			//}
+			}
 
-			//if (autoAck) {
+			if (autoAck) {
 				return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-			/*} else {
+			} else {
 				metaTuple.waitFinish();
 				if (metaTuple.isSuccess() == true) {
 					return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 				} else {
 					return ConsumeConcurrentlyStatus.RECONSUME_LATER;
 				}
-			}*/
+			}
 
 		} catch (Exception e) {
 			LOG.error("Failed to emit " + id, e);

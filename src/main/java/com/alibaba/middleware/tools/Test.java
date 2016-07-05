@@ -7,6 +7,8 @@ import java.util.TimerTask;
 
 import com.alibaba.middleware.race.RaceConfig;
 import com.esotericsoftware.minlog.Log;
+import com.taobao.tair.DataEntry;
+import com.taobao.tair.Result;
 import com.taobao.tair.ResultCode;
 import com.taobao.tair.impl.DefaultTairManager;
 
@@ -28,8 +30,9 @@ public class Test {
 		tairManager.init();*/
 		
 		
-		/*List<String> confServers = new ArrayList<String>();
-		confServers.add("192.168.52.128:5198");
+		List<String> confServers = new ArrayList<String>();
+		confServers.add(RaceConfig.TairConfigServer);
+		confServers.add(RaceConfig.TairSalveConfigServer);
 
 		// 创建客户端实例
 		DefaultTairManager tairManager = new DefaultTairManager();
@@ -38,9 +41,32 @@ public class Test {
 		// 设置组名
 		tairManager.setGroupName("group_1");
 		// 初始化客户端
-		tairManager.init();*/
+		tairManager.init();
 		
-		Timer timer  = new Timer();
+		ResultCode rc1 = tairManager.put(0, RaceConfig.prex_tmall + 0, "12345");
+		rc1 = tairManager.put(0, RaceConfig.prex_tmall + 0, "123456");
+		if( rc1.isSuccess()) {
+			System.out.println("tair write success!");
+			DataEntry resultTmall = tairManager.get(0, RaceConfig.prex_tmall + 0).getValue();
+			System.out.println(resultTmall.getValue());
+		}
+		/*for( long time = 1466326740; time < 1466337361; time += 60) {
+			
+			DataEntry resultTmall = tairManager.get(0, RaceConfig.prex_tmall + time).getValue();
+			DataEntry resultTaobao = tairManager.get(0, RaceConfig.prex_taobao + time).getValue();
+			DataEntry resultMobile = tairManager.get(0, RaceConfig.prex_mobile + time).getValue();
+			DataEntry resultPC = tairManager.get(0, RaceConfig.prex_pc + time).getValue();
+			DataEntry resultRatio = tairManager.get(0, RaceConfig.prex_ratio + time).getValue();
+			
+			System.out.println(resultTmall.getValue());
+			System.out.println(resultTaobao.getValue());
+			System.out.println(resultMobile.getValue());
+			System.out.println(resultPC.getValue());
+			System.out.println(resultRatio.getValue() + "\n");
+		}*/
+
+		
+		/*Timer timer  = new Timer();
 		timer.schedule(new TimerTask() {
 
 			@Override
@@ -49,7 +75,7 @@ public class Test {
 				System.out.println("timer");
 			}
 			
-		}, 10000);
+		}, 10000);*/
 
 	}
 }

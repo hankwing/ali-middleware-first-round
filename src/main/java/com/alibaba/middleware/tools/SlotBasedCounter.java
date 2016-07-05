@@ -17,6 +17,9 @@ import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceConfig.TradeType;
 import com.alibaba.middleware.race.jstorm.RaceTopology;
 import com.esotericsoftware.minlog.Log;
+import com.taobao.tair.DataEntry;
+import com.taobao.tair.Result;
+import com.taobao.tair.impl.DefaultTairManager;
 
 public final class SlotBasedCounter implements Serializable {
 
@@ -25,6 +28,7 @@ public final class SlotBasedCounter implements Serializable {
 	private final Map<Long, PartialResult> timeToResults = new HashMap<Long, PartialResult>();
 	private List<Long> times = null;
 	private int numSlots = 0;
+	private DefaultTairManager tairManager = null;
 
 	public SlotBasedCounter(int numSlots) {
 		if (numSlots <= 0) {
@@ -34,6 +38,19 @@ public final class SlotBasedCounter implements Serializable {
 		}
 		times = new ArrayList<Long>();
 		this.numSlots = numSlots;
+		
+		List<String> confServers = new ArrayList<String>();
+		confServers.add(RaceConfig.TairConfigServer);
+		confServers.add(RaceConfig.TairSalveConfigServer);
+
+		// 创建客户端实例
+		tairManager = new DefaultTairManager();
+		tairManager.setConfigServerList(confServers);
+
+		// 设置组名
+		tairManager.setGroupName(RaceConfig.TairGroup);
+		 //初始化客户端
+		tairManager.init();
 	}
 
 	/**
@@ -50,6 +67,35 @@ public final class SlotBasedCounter implements Serializable {
 			Long mtime = getMinimumTime();
 			if( time < mtime && times.size() >= numSlots ) {
 				LOG.info("need to increase window size!!!!!!!!!!!!!");
+				Long realTime = time * 60;
+				String prex = null;
+				Result<DataEntry> result = null;
+				switch( type) {
+				case Tmall:
+					prex = RaceConfig.prex_tmall + realTime;
+					break;
+				case Taobao:
+					prex = RaceConfig.prex_taobao + realTime;
+					break;
+				case PC:
+					prex = RaceConfig.prex_pc + realTime;
+					break;
+				case Mobile:
+					prex = RaceConfig.prex_mobile + realTime;
+					break;
+				}
+				
+				result = tairManager.get(RaceConfig.TairNamespace, prex);
+				if (result.isSuccess()) {
+				    DataEntry entry = result.getValue();
+				    if(entry != null) {
+				        // 数据存在
+				    	Double modify = Double.valueOf(String.valueOf(entry.getValue()));
+				    	modify += trade;
+				    	tairManager.put(RaceConfig.TairNamespace, prex, String.format("%.2f",modify));
+				    	LOG.info("modify time:{}, type:{} success!", realTime, type);
+				    }
+				}
 				return;
 			}
 			times.add(time);
