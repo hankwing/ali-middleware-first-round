@@ -150,7 +150,7 @@ public class MergeResultsBolt implements IBasicBolt {
 						time, String.format("%.2f",Mobile / PC));
 				if (rc1.isSuccess() && rc2.isSuccess() && rc5.isSuccess() ) {
 				    // put成功
-					LOG.info("tair success!!, time:{}, values:{}, {}, {}, {}, {}",partResults.get(0).time, 
+					LOG.info("tair success!!, time:{}, values:{}, {}, {}, {}, {}",time, 
 							String.format("%.2f",tmallTrade), String.format("%.2f",taobaoTrade),
 							String.format("%.2f",Mobile),String.format("%.2f",PC),
 							String.format("%.2f",Mobile / PC));

@@ -66,7 +66,7 @@ public final class SlotBasedCounter implements Serializable {
 		if (partial == null) {
 			Long mtime = getMinimumTime();
 			if( time < mtime && times.size() >= numSlots ) {
-				LOG.info("need to increase window size!!!!!!!!!!!!!");
+				/*LOG.info("need to increase window size!!!!!!!!!!!!!");
 				Long realTime = time * 60;
 				String prex = null;
 				Result<DataEntry> result = null;
@@ -95,7 +95,7 @@ public final class SlotBasedCounter implements Serializable {
 				    	tairManager.put(RaceConfig.TairNamespace, prex, String.format("%.2f",modify));
 				    	LOG.info("modify time:{}, type:{} success!", realTime, type);
 				    }
-				}
+				}*/
 				return;
 			}
 			times.add(time);

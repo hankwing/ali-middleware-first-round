@@ -5,18 +5,18 @@ import java.io.Serializable;
 public class RaceConfig implements Serializable {
 
     //这些是写tair key的前缀43210ehyps
-    public static String prex_tmall = "platformTmall_43210ehyps_";
-    public static String prex_taobao = "platformTaobao_43210ehyps_";
-    public static String prex_pc = "pc_43210ehyps_";
-    public static String prex_mobile = "mobile_43210ehyps_";
-    public static String prex_ratio = "ratio_43210ehyps_";
+    public static String prex_tmall = "platformTmall_46020bp6gh_";
+    public static String prex_taobao = "platformTaobao_46020bp6gh_";
+    public static String prex_pc = "pc_46020bp6gh_";
+    public static String prex_mobile = "mobile_46020bp6gh_";
+    public static String prex_ratio = "ratio_46020bp6gh_";
     public static String[] componentsIds = {"TmallSpout", "TaobaoSpout","PaymentSpout", 
     	"PartialResultsBolt", "ResultBolt"};
 
     //这些jstorm/rocketMq/tair 的集群配置信息，这些配置信息在正式提交代码前会被公布
-    public static String JstormTopologyName = "43210ehyps";
+    public static String JstormTopologyName = "46020bp6gh";
     //public static String MetaConsumerGroup = "43210ehyps7814";	// local test!!
-    public static String MetaConsumerGroup = "43210ehyps";
+    public static String MetaConsumerGroup = "46020bp6gh";
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
@@ -43,10 +43,10 @@ public class RaceConfig implements Serializable {
     public static String ComponentPartialResultBolt = "PartialResultBolt";
     public static String ComponentResultBolt = "ResultBolt";
     
-    public static int windowLengthInSeconds = 60;
+    public static int windowLengthInSeconds = 100;
     public static int emitFrequencyInSeconds = 1;
     
-    public static int spout_Parallelism_hint = 2;
+    public static int spout_Parallelism_hint = 1;
     public static int middleBolt_Parallelism_hint = 6;
     public static int resultBolt_Parallelism_hint = 1;
     public static int ackBolt_Parallelism_hint = 1;
