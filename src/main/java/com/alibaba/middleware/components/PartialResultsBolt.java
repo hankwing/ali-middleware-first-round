@@ -84,7 +84,7 @@ public class PartialResultsBolt implements IBasicBolt {
 				
 			}
 			
-		}, 5*60*1000, 30*1000);
+		}, 5*60*1000, 20*1000);
 	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
@@ -205,7 +205,7 @@ public class PartialResultsBolt implements IBasicBolt {
 					order.addPayAmount(payAmount);
 				}
 			}
-			if( counter.isNeedSlide()) {
+			/*if( counter.isNeedSlide()) {
 				// need to send partial results tuples
 				PartialResult result = counter.getSlidingPartialResult(ordersToBeProcess);
 				
@@ -214,7 +214,7 @@ public class PartialResultsBolt implements IBasicBolt {
 					tmallOrders.remove(result.time - RaceConfig.orderExpiredMinutes);	// remove expired orders
 					taobaoOrders.remove(result.time - RaceConfig.orderExpiredMinutes);
 				}
-			}
+			}*/
 			
 		}
 	}

@@ -44,13 +44,13 @@ public final class SlotBasedCounter implements Serializable {
 		confServers.add(RaceConfig.TairSalveConfigServer);
 
 		// 创建客户端实例
-		tairManager = new DefaultTairManager();
+		/*tairManager = new DefaultTairManager();
 		tairManager.setConfigServerList(confServers);
 
 		// 设置组名
 		tairManager.setGroupName(RaceConfig.TairGroup);
 		 //初始化客户端
-		tairManager.init();
+		tairManager.init();*/
 	}
 
 	/**
@@ -64,8 +64,8 @@ public final class SlotBasedCounter implements Serializable {
 
 		PartialResult partial = timeToResults.get(time);
 		if (partial == null) {
-			Long mtime = getMinimumTime();
-			if( time < mtime && times.size() >= numSlots ) {
+			//Long mtime = getMinimumTime();
+			//if( time < mtime && times.size() >= numSlots ) {
 				/*LOG.info("need to increase window size!!!!!!!!!!!!!");
 				Long realTime = time * 60;
 				String prex = null;
@@ -96,8 +96,8 @@ public final class SlotBasedCounter implements Serializable {
 				    	LOG.info("modify time:{}, type:{} success!", realTime, type);
 				    }
 				}*/
-				return;
-			}
+				//return;
+			//}
 			times.add(time);
 			times.sort(null);
 			partial = new PartialResult(time);

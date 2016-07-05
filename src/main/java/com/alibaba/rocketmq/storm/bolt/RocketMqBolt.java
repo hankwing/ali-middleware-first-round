@@ -31,14 +31,14 @@ public class RocketMqBolt implements IRichBolt {
     public void execute(Tuple input) {
         Object msgObj = input.getValue(0);
         Object msgStat = input.getValue(1);
-        try {
+        /*try {
             LOG.info("Messages:" + msgObj + "\n statistics:" + msgStat);
 
         } catch (Exception e) {
             collector.fail(input);
             return;
             //throw new FailedException(e);
-        }
+        }*/
         collector.ack(input);
     }
 
