@@ -6,6 +6,7 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
+import com.alibaba.middleware.components.DSBolt;
 import com.alibaba.middleware.components.MergeResultsBolt;
 import com.alibaba.middleware.components.PartialResultsBolt;
 import com.alibaba.middleware.components.PaySpout;
@@ -40,16 +41,16 @@ public class RaceTopology {
 		TopologyBuilder builder = new TopologyBuilder();
 		builder.setSpout(RaceConfig.ComponentSpouts,
 				new PaySpout(), RaceConfig.spout_Parallelism_hint);
-		/*builder.setSpout(RaceConfig.ComponentTmallSpout, new TmallSpoutPull(),
-				RaceConfig.spout_Parallelism_hint);
-		builder.setSpout(RaceConfig.ComponentTaobaoSpout, new TaobaoSpoutPull(),
-				RaceConfig.spout_Parallelism_hint);
-		builder.setSpout(RaceConfig.ComponentPaymentSpout, new PaySpout(),
-				RaceConfig.spout_Parallelism_hint);*/
+
+		builder.setBolt(RaceConfig.ComponentDSBolt,
+				new DSBolt(),
+				RaceConfig.dsBolt_Parallelism_hint)
+				.shuffleGrouping(RaceConfig.ComponentSpouts);
+		
 		builder.setBolt(RaceConfig.ComponentPartialResultBolt,
 				new PartialResultsBolt(),
 				RaceConfig.middleBolt_Parallelism_hint)
-				.fieldsGrouping(RaceConfig.ComponentSpouts,
+				.fieldsGrouping(RaceConfig.ComponentDSBolt,
 						new Fields("orderID"));
 				/*.fieldsGrouping(RaceConfig.ComponentTaobaoSpout,
 						new Fields("orderID"))

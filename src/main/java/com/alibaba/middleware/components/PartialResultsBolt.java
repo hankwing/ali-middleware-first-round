@@ -98,7 +98,7 @@ public class PartialResultsBolt implements IBasicBolt {
 						
 					}
 					
-				},10*1000, 10*1000);
+				},30*1000, 20*1000);
 			}
 			isEnd = false;
 		}
@@ -107,9 +107,9 @@ public class PartialResultsBolt implements IBasicBolt {
 			_collector = collector;
 		}
 		
-		String topic = input.getStringByField("topic");
-		Long time = input.getLongByField("createTime");
-		double payAmount = input.getDoubleByField("payAmount");
+		String topic = input.getString(0);
+		Long time = input.getLong(1);
+		double payAmount = input.getDouble(3);
 		
 		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
 				time*60,
@@ -119,7 +119,7 @@ public class PartialResultsBolt implements IBasicBolt {
 		if (topic.equals(RaceConfig.MqTmallTradeTopic)) {
 			// execute tmall order tuple
 			//Log.info("receive tmallTuples");
-			Long tmallOrderID = input.getLongByField("orderID");
+			Long tmallOrderID = input.getLong(2);
 			if( tmallOrders.put(tmallOrderID, payAmount) == null) {
 				//boolean isFound = false;
 				OrderToBeProcess order = ordersToBeProcess.get(tmallOrderID);
@@ -134,7 +134,7 @@ public class PartialResultsBolt implements IBasicBolt {
 		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
 			// execute taobao order tuple
 			//Log.info("receive taobaoTuples");
-			Long taobaoOrderID = input.getLongByField("orderID");
+			Long taobaoOrderID = input.getLong(2);
 			if( taobaoOrders.put(taobaoOrderID, payAmount) == null) {
 				//boolean isFound = false;
 				OrderToBeProcess order = ordersToBeProcess.get(taobaoOrderID);
@@ -153,19 +153,19 @@ public class PartialResultsBolt implements IBasicBolt {
 			OrderToBeProcess order = ordersToBeProcess.get(orderID);
 			if( order == null) {
 				ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
-				TradeType type = input.getShortByField("payPlatform") == 0 ? TradeType.PC
+				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
 			else if(order.addPayAmount(payAmount)) {
 				// need to merge result
-				TradeType type = input.getShortByField("payPlatform") == 0 ? TradeType.PC
+				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
 			else {
 				// duplicate
-				Log.info("duplicate payment message!");
+				Log.info("duplicate payment message:{}:{}", orderID, payAmount);
 				return;
 			}
 			

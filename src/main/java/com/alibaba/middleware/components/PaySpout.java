@@ -79,8 +79,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 			consumer.registerMessageListener(this);
-			consumer.setConsumeMessageBatchMaxSize(1000);
-			consumer.setPullBatchSize(1000);
+			consumer.setConsumeMessageBatchMaxSize(100);
 			consumer.start();
 		} catch (Exception e) {
 			LOG.error("Failed to create Meta Consumer ", e);
@@ -184,7 +183,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("topic","createTime","orderID","payAmount","payPlatform"));
+		declarer.declare(new Fields("data","topic"));
 	}
 
 	@Override
@@ -204,47 +203,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			for (MessageExt me : msgs) {
 				// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
 				
-				String topic = me.getTopic();
-				byte[] body = me.getBody();
-				if ( body.length < 3) {
-					// Info: 生产者停止生成数据, 并不意味着马上结束
-					suicide ++;
-					LOG.info("receive stop signs:{}, {}times", body, suicide );
-					/*if(false) {
-						Map conf = Utils.readStormConfig();
-						Client client = 
-								NimbusClient.getConfiguredClient(conf).getClient();
-						KillOptions killOpts = new KillOptions();
-						killOpts.set_wait_secs(120); // time to wait before killing
-						try {
-							client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
-									killOpts);
-						} catch (NotAliveException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (TException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						continue;
-					}*/
-					
-				}else if( topic.equals(RaceConfig.MqPayTopic)) {
-					PaymentMessage paymentMessage = RaceUtils.readKryoObject(
-							PaymentMessage.class, body);
-					collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
-							paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
-							paymentMessage.getPayPlatform()));
-					//LOG.info("emit {}", paymentMessage);
-				}
-				else {
-					
-					OrderMessage orderMessage = RaceUtils.readKryoObject(
-		        			OrderMessage.class, body);
-					collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
-							orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
-					//LOG.info("emit {}", orderMessage);
-				}
+				collector.emit(new Values(me.getBody(), me.getTopic()));
 			}
 			//}
 
