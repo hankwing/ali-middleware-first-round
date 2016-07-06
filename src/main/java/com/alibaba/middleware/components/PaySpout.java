@@ -114,15 +114,14 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	}
 
 	public void sendTuple(MetaTuple metaTuple) {
-		metaTuple.updateEmitMs();
+		//metaTuple.updateEmitMs();
 		
 		for (MessageExt me : metaTuple.getMsgList()) {
 			// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
 			
 			String topic = me.getTopic();
 			byte[] body = me.getBody();
-			if ( body!= null && body.length == 2 && body[0] == 0
-					&& body[1] == 0) {
+			if ( body.length < 3) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
 				suicide ++;
 				LOG.info("receive stop signs:{}, {}times", body, suicide );
@@ -197,12 +196,56 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
 			ConsumeConcurrentlyContext context) {
 		try {
-			MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
+			//MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
 
 			//if (flowControl) {
 			//	sendingQueue.offer(metaTuple);
 			//} else {
-			sendTuple(metaTuple);
+			for (MessageExt me : msgs) {
+				// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
+				
+				String topic = me.getTopic();
+				byte[] body = me.getBody();
+				if ( body.length < 3) {
+					// Info: 生产者停止生成数据, 并不意味着马上结束
+					suicide ++;
+					LOG.info("receive stop signs:{}, {}times", body, suicide );
+					/*if(false) {
+						Map conf = Utils.readStormConfig();
+						Client client = 
+								NimbusClient.getConfiguredClient(conf).getClient();
+						KillOptions killOpts = new KillOptions();
+						killOpts.set_wait_secs(120); // time to wait before killing
+						try {
+							client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
+									killOpts);
+						} catch (NotAliveException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (TException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						continue;
+					}*/
+					
+				}else if( topic.equals(RaceConfig.MqPayTopic)) {
+					PaymentMessage paymentMessage = RaceUtils.readKryoObject(
+							PaymentMessage.class, body);
+					collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
+							paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
+							paymentMessage.getPayPlatform()));
+					//LOG.info("emit {}", paymentMessage);
+				}
+				else {
+					
+					OrderMessage orderMessage = RaceUtils.readKryoObject(
+		        			OrderMessage.class, body);
+					collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
+							orderMessage.getOrderId(),0,0));
+					//LOG.info("emit {}", orderMessage);
+				}
+			}
 			//}
 
 			//if (autoAck) {

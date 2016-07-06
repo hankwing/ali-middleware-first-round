@@ -38,9 +38,9 @@ public class PartialResultsBolt implements IBasicBolt {
 	private static final long serialVersionUID = -7776452677749510415L;
 	private static final Logger Log = LoggerFactory.getLogger(PartialResultsBolt.class);
 	private SlidingWindowCounter counter = null;
-	private Map<Long, Map<Long,OrderToBeProcess>> ordersToBeProcess = null;
-	private Map<Long, Map<Long, Boolean>> tmallOrders = null;
-	private Map<Long, Map<Long, Boolean>> taobaoOrders = null;
+	private Map<Long,OrderToBeProcess> ordersToBeProcess = null;
+	private Map<Long, Boolean> tmallOrders = null;
+	private Map<Long, Boolean> taobaoOrders = null;
 	private BasicOutputCollector _collector = null;
 	
 	private Timer cleanupTimer = null;
@@ -64,9 +64,9 @@ public class PartialResultsBolt implements IBasicBolt {
 		counter = new SlidingWindowCounter(deriveNumWindowChunksFrom(
 				RaceConfig.windowLengthInSeconds, RaceConfig.emitFrequencyInSeconds));
 		//System.out.println("numSlots: " + RaceConfig.windowLengthInSeconds);
-		ordersToBeProcess = new HashMap<Long, Map<Long,OrderToBeProcess>>();
-		tmallOrders = new HashMap<Long, Map<Long,Boolean>>();
-		taobaoOrders = new HashMap<Long, Map<Long,Boolean>>();
+		ordersToBeProcess = new HashMap<Long,OrderToBeProcess>();
+		tmallOrders = new HashMap<Long,Boolean>();
+		taobaoOrders = new HashMap<Long,Boolean>();
 		
 	}
 
@@ -98,7 +98,7 @@ public class PartialResultsBolt implements IBasicBolt {
 						
 					}
 					
-				},10*1000, 20*1000);
+				},10*1000, 10*1000);
 			}
 			isEnd = false;
 		}
@@ -120,48 +120,27 @@ public class PartialResultsBolt implements IBasicBolt {
 			//Log.info("receive tmallTuples");
 			Long tmallOrderID = input.getLongByField("orderID");
 			//boolean isFound = false;
-			for( Map<Long,OrderToBeProcess> list: ordersToBeProcess.values()) {
-				OrderToBeProcess order = list.get(tmallOrderID);
-				if (order != null) {
-					// find the tmall order in the payment list
-					//isFound = true;
-					counter.incrementCount(order.time, TradeType.Tmall,
-							order.payAmount);
-					// delete from list
-					list.remove(tmallOrderID);
-					break;
-				}
+			OrderToBeProcess order = ordersToBeProcess.remove(tmallOrderID);
+			if (order != null) {
+				// find the tmall order in the payment list
+				//isFound = true;
+				counter.incrementCount(order.time, TradeType.Tmall,
+						order.payAmount);
 			}
 			// add the order id to tmall list
-			Map<Long,Boolean> ordersList = tmallOrders.get(time);
-			if( ordersList == null) {
-				ordersList = new HashMap<Long, Boolean>();
-				tmallOrders.put(time, ordersList);
-			}
-			ordersList.put(tmallOrderID, true);
+			tmallOrders.put(tmallOrderID, true);
 			
 		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
 			// execute taobao order tuple
 			//Log.info("receive taobaoTuples");
 			Long taobaoOrderID = input.getLongByField("orderID");
-
-			for( Map<Long,OrderToBeProcess> list: ordersToBeProcess.values()) {
-				OrderToBeProcess order = list.get(taobaoOrderID);
-				if (order != null) {
-					// find the tmall order in the payment list
-					counter.incrementCount(order.time, TradeType.Taobao,
-							order.payAmount);
-					// delete from list
-					list.remove(taobaoOrderID);
-					break;
-				}
+			OrderToBeProcess order = ordersToBeProcess.remove(taobaoOrderID);
+			if (order != null) {
+				// find the tmall order in the payment list
+				counter.incrementCount(order.time, TradeType.Taobao,
+						order.payAmount);
 			}
-			Map<Long, Boolean> ordersList = taobaoOrders.get(time);
-			if( ordersList == null) {
-				ordersList = new HashMap<Long, Boolean>();
-				taobaoOrders.put(time, ordersList);
-			}
-			ordersList.put(taobaoOrderID, true);
+			taobaoOrders.put(taobaoOrderID, true);
 
 		} else if (topic.equals(RaceConfig.MqPayTopic)) {
 			// execute payment tuple
@@ -173,35 +152,28 @@ public class PartialResultsBolt implements IBasicBolt {
 					: TradeType.Mobile;
 			counter.incrementCount(time, type, payAmount);
 
-			for( Map<Long, Boolean> tmall : tmallOrders.values()) {
-				if( tmall.get(orderID) != null) {
+			//for( Map<Long, Boolean> tmall : tmallOrders.values()) {
+				if( tmallOrders.get(orderID) != null) {
 					counter.incrementCount(time, TradeType.Tmall,payAmount);
 					//tmall.remove(orderID);
 					isFound = true;
-					break;
 				}
-			}
+			//}
 			if( !isFound) {
-				for( Map<Long, Boolean> taobao : taobaoOrders.values()) {
+				//for( Map<Long, Boolean> taobao : taobaoOrders.values()) {
 					//System.out.println("orderID:" + orderID);
-					if( taobao.get(orderID) != null) {
+					if( taobaoOrders.get(orderID) != null) {
 						counter.incrementCount(time, TradeType.Taobao,payAmount);
 						//taobao.remove(orderID);
 						isFound = true;
-						break;
 					}
-				}
+				//}
 			}
 			if( !isFound) {
-				
-				Map<Long, OrderToBeProcess> addList = ordersToBeProcess.get(time);
-				if(addList == null) {
-					addList = new HashMap<Long, OrderToBeProcess>();
-					ordersToBeProcess.put(time, addList);
-				}
-				OrderToBeProcess order = addList.get(orderID);
+
+				OrderToBeProcess order = ordersToBeProcess.get(orderID);
 				if( order == null) {
-					addList.put( orderID, new OrderToBeProcess(time,payAmount));
+					ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
 				}
 				else {
 					// need to merge result
