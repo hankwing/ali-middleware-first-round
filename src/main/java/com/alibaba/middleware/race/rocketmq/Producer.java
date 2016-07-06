@@ -37,7 +37,7 @@ public class Producer {
         producer.setNamesrvAddr("192.168.0.17:9876");
 
         producer.start();
-
+        System.out.println("count: " + count);
         final String [] topics = new String[]{RaceConfig.MqTaobaoTradeTopic, RaceConfig.MqTmallTradeTopic};
         final Semaphore semaphore = new Semaphore(0);
 
@@ -53,7 +53,7 @@ public class Producer {
 
                 producer.send(msgToBroker, new SendCallback() {
                     public void onSuccess(SendResult sendResult) {
-                        System.out.println(orderMessage);
+                        //System.out.println(orderMessage);
                         semaphore.release();
                     }
                     public void onException(Throwable throwable) {
@@ -75,7 +75,7 @@ public class Producer {
                         final Message messageToBroker = new Message(RaceConfig.MqPayTopic, RaceUtils.writeKryoObject(paymentMessage));
                         producer.send(messageToBroker, new SendCallback() {
                             public void onSuccess(SendResult sendResult) {
-                                System.out.println(paymentMessage);
+                                //System.out.println(paymentMessage);
                             }
                             public void onException(Throwable throwable) {
                                 throwable.printStackTrace();

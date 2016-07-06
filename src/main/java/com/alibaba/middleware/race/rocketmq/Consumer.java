@@ -36,7 +36,7 @@ public class Consumer {
         //在本地搭建好broker后,记得指定nameServer的地址
         consumer.setNamesrvAddr("192.168.0.17:9876");
 
-        consumer.subscribe(RaceConfig.MqPayTopic, "*");
+        consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 
         consumer.registerMessageListener(new MessageListenerConcurrently() {
 

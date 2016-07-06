@@ -157,7 +157,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 				OrderMessage orderMessage = RaceUtils.readKryoObject(
 	        			OrderMessage.class, body);
 				collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
-						orderMessage.getOrderId(),0,0));
+						orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
 				//LOG.info("emit {}", orderMessage);
 			}
 		}
@@ -242,7 +242,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 					OrderMessage orderMessage = RaceUtils.readKryoObject(
 		        			OrderMessage.class, body);
 					collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
-							orderMessage.getOrderId(),0,0));
+							orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
 					//LOG.info("emit {}", orderMessage);
 				}
 			}

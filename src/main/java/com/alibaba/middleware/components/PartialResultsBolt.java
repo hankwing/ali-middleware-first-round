@@ -39,8 +39,8 @@ public class PartialResultsBolt implements IBasicBolt {
 	private static final Logger Log = LoggerFactory.getLogger(PartialResultsBolt.class);
 	private SlidingWindowCounter counter = null;
 	private Map<Long,OrderToBeProcess> ordersToBeProcess = null;
-	private Map<Long, Boolean> tmallOrders = null;
-	private Map<Long, Boolean> taobaoOrders = null;
+	private Map<Long, Double> tmallOrders = null;
+	private Map<Long, Double> taobaoOrders = null;
 	private BasicOutputCollector _collector = null;
 	
 	private Timer cleanupTimer = null;
@@ -65,8 +65,8 @@ public class PartialResultsBolt implements IBasicBolt {
 				RaceConfig.windowLengthInSeconds, RaceConfig.emitFrequencyInSeconds));
 		//System.out.println("numSlots: " + RaceConfig.windowLengthInSeconds);
 		ordersToBeProcess = new HashMap<Long,OrderToBeProcess>();
-		tmallOrders = new HashMap<Long,Boolean>();
-		taobaoOrders = new HashMap<Long,Boolean>();
+		tmallOrders = new HashMap<Long,Double>();
+		taobaoOrders = new HashMap<Long,Double>();
 		
 	}
 
@@ -109,6 +109,7 @@ public class PartialResultsBolt implements IBasicBolt {
 		
 		String topic = input.getStringByField("topic");
 		Long time = input.getLongByField("createTime");
+		double payAmount = input.getDoubleByField("payAmount");
 		
 		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
 				time*60,
@@ -119,66 +120,60 @@ public class PartialResultsBolt implements IBasicBolt {
 			// execute tmall order tuple
 			//Log.info("receive tmallTuples");
 			Long tmallOrderID = input.getLongByField("orderID");
-			//boolean isFound = false;
-			OrderToBeProcess order = ordersToBeProcess.remove(tmallOrderID);
-			if (order != null) {
-				// find the tmall order in the payment list
-				//isFound = true;
-				counter.incrementCount(order.time, TradeType.Tmall,
-						order.payAmount);
-			}
-			// add the order id to tmall list
-			tmallOrders.put(tmallOrderID, true);
+			if( tmallOrders.put(tmallOrderID, payAmount) == null) {
+				//boolean isFound = false;
+				OrderToBeProcess order = ordersToBeProcess.get(tmallOrderID);
+				if (order != null) {
+					// find the tmall order in the payment list
+					//isFound = true;
+					counter.incrementCount(order.time, TradeType.Tmall,
+							order.payAmount);
+				}
+			}		
 			
 		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
 			// execute taobao order tuple
 			//Log.info("receive taobaoTuples");
 			Long taobaoOrderID = input.getLongByField("orderID");
-			OrderToBeProcess order = ordersToBeProcess.remove(taobaoOrderID);
-			if (order != null) {
-				// find the tmall order in the payment list
-				counter.incrementCount(order.time, TradeType.Taobao,
-						order.payAmount);
+			if( taobaoOrders.put(taobaoOrderID, payAmount) == null) {
+				//boolean isFound = false;
+				OrderToBeProcess order = ordersToBeProcess.get(taobaoOrderID);
+				if (order != null) {
+					// find the tmall order in the payment list
+					//isFound = true;
+					counter.incrementCount(order.time, TradeType.Taobao,
+							order.payAmount);
+				}
 			}
-			taobaoOrders.put(taobaoOrderID, true);
 
 		} else if (topic.equals(RaceConfig.MqPayTopic)) {
 			// execute payment tuple
 			Long orderID = input.getLongByField("orderID");
 			
-			double payAmount = input.getDoubleByField("payAmount");
-			boolean isFound = false;
-			TradeType type = input.getShortByField("payPlatform") == 0 ? TradeType.PC
-					: TradeType.Mobile;
-			counter.incrementCount(time, type, payAmount);
-
-			//for( Map<Long, Boolean> tmall : tmallOrders.values()) {
-				if( tmallOrders.get(orderID) != null) {
-					counter.incrementCount(time, TradeType.Tmall,payAmount);
-					//tmall.remove(orderID);
-					isFound = true;
-				}
-			//}
-			if( !isFound) {
-				//for( Map<Long, Boolean> taobao : taobaoOrders.values()) {
-					//System.out.println("orderID:" + orderID);
-					if( taobaoOrders.get(orderID) != null) {
-						counter.incrementCount(time, TradeType.Taobao,payAmount);
-						//taobao.remove(orderID);
-						isFound = true;
-					}
-				//}
+			OrderToBeProcess order = ordersToBeProcess.get(orderID);
+			if( order == null) {
+				ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
+				TradeType type = input.getShortByField("payPlatform") == 0 ? TradeType.PC
+						: TradeType.Mobile;
+				counter.incrementCount(time, type, payAmount);
 			}
-			if( !isFound) {
-
-				OrderToBeProcess order = ordersToBeProcess.get(orderID);
-				if( order == null) {
-					ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
-				}
-				else {
-					// need to merge result
-					order.addPayAmount(payAmount);
-				}
+			else if(order.addPayAmount(payAmount)) {
+				// need to merge result
+				TradeType type = input.getShortByField("payPlatform") == 0 ? TradeType.PC
+						: TradeType.Mobile;
+				counter.incrementCount(time, type, payAmount);
+			}
+			else {
+				// duplicate
+				Log.info("duplicate payment message!");
+				return;
+			}
+			
+			if( tmallOrders.get(orderID) != null) {
+				counter.incrementCount(time, TradeType.Tmall,payAmount);
+			}
+			else if( taobaoOrders.get(orderID) != null) {		
+				counter.incrementCount(time, TradeType.Taobao,payAmount);
 			}
 			/*if( counter.isNeedSlide()) {
 				// need to send partial results tuples
@@ -216,14 +211,26 @@ public class PartialResultsBolt implements IBasicBolt {
 
 		public Long time = 0L;
 		public double payAmount = 0;
+		public List<Double> payList = null;
 
 		public OrderToBeProcess(Long time, double payAmount) {
 			this.time = time;
 			this.payAmount = payAmount;
+			payList = new ArrayList<Double>();
+			payList.add(payAmount);
 		}
 		
-		public void addPayAmount( double part) {
-			payAmount += part;
+		public boolean addPayAmount( double part) {
+			if( !payList.contains(part)) {
+				// duplicate
+				payList.add(part);
+				payAmount += part;
+				return true;
+			}
+			else {
+				return false;
+			}
+			
 		}
 	}
 
