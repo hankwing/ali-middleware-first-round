@@ -86,7 +86,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			throw new RuntimeException("Failed to create MetaConsumer" + id, e);
 		}
 
-		LOG.info("Successfully init " + id);
+		LOG.info("Successfully init " + id); 
 
 	}
 
