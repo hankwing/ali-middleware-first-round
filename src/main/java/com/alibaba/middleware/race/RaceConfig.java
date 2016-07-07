@@ -15,14 +15,14 @@ public class RaceConfig implements Serializable {
 
     //这些jstorm/rocketMq/tair 的集群配置信息，这些配置信息在正式提交代码前会被公布
     public static String JstormTopologyName = "43210ehyps";
-    //public static String MetaConsumerGroup = "43210ehyps1440";	// local test!!
+    //public static String MetaConsumerGroup = "43210ehyps0923";	// local test!!
     public static String MetaConsumerGroup = "43210ehyps";
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
     public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder";
-    //public static String MqPayTopic = "MiddlewareRaceTestData_Pay_Test2";			//local test!!
-    //public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder_Test2";	//local test!!
-    //public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder_Test2";//local test!!
+    //public static String MqPayTopic = "MiddlewareRaceTestData_Pay_Test3";			//local test!!
+    //public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder_Test3";	//local test!!
+    //public static String MqTaobaoTradeTopic = "MiddlewareRaceTestData_TBOrder_Test3";//local test!!
     public static String TairConfigServer = "10.101.72.127:5198";
     //public static String TairConfigServer = "192.168.0.237:5198";					// local test!!
     public static String TairSalveConfigServer = "10.101.72.128:5198";
@@ -51,12 +51,12 @@ public class RaceConfig implements Serializable {
     public static int emitFrequencyInSeconds = 1;
     
     public static int spout_Parallelism_hint = 4;
-    public static int middleBolt_Parallelism_hint = 2;
+    public static int middleBolt_Parallelism_hint = 8;
     public static int dsBolt_Parallelism_hint = 8;
     public static int resultBolt_Parallelism_hint = 1;
     public static int ackBolt_Parallelism_hint = 1;
     public static int worker_Number = 4;
-    public static int max_Spout_Pending = Integer.MAX_VALUE;
+    public static int max_Spout_Pending = 10*1024;
     
     public static int slidingThreshold = 100;
     public static int emit_One_Time = 100;

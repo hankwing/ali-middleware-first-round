@@ -22,6 +22,7 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.IBasicBolt;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
@@ -33,7 +34,7 @@ import backtype.storm.tuple.Values;
  * @author hankwing
  *
  */
-public class PartialResultsBolt implements IBasicBolt {
+public class PartialResultsBolt implements IRichBolt {
 
 	private static final long serialVersionUID = -7776452677749510415L;
 	private static final Logger Log = LoggerFactory.getLogger(PartialResultsBolt.class);
@@ -41,7 +42,7 @@ public class PartialResultsBolt implements IBasicBolt {
 	private Map<Long,OrderToBeProcess> ordersToBeProcess = null;
 	private Map<Long, Double> tmallOrders = null;
 	private Map<Long, Double> taobaoOrders = null;
-	private BasicOutputCollector _collector = null;
+	private OutputCollector _collector = null;
 	
 	private Timer cleanupTimer = null;
 	private boolean isEnd = true;
@@ -58,135 +59,10 @@ public class PartialResultsBolt implements IBasicBolt {
 		return null;
 	}
 
-	@Override
-	public void prepare(Map stormConf, TopologyContext context) {
-		// TODO Auto-generated method stub
-		counter = new SlidingWindowCounter(deriveNumWindowChunksFrom(
-				RaceConfig.windowLengthInSeconds, RaceConfig.emitFrequencyInSeconds));
-		//System.out.println("numSlots: " + RaceConfig.windowLengthInSeconds);
-		ordersToBeProcess = new HashMap<Long,OrderToBeProcess>();
-		tmallOrders = new HashMap<Long,Double>();
-		taobaoOrders = new HashMap<Long,Double>();
-		
-	}
 
 	private int deriveNumWindowChunksFrom(int windowLengthInSeconds,
 			int windowUpdateFrequencyInSeconds) {
 		return windowLengthInSeconds / windowUpdateFrequencyInSeconds;
-	}
-
-	@Override
-	public void execute(Tuple input, BasicOutputCollector collector) {
-		// TODO Auto-generated method stub
-		if(isEnd) {
-			// mark the bolt is continuing
-			if(cleanupTimer == null ) {
-				// check every 30 secs
-				cleanupTimer = new Timer();
-				cleanupTimer.schedule(new TimerTask() {
-
-					@Override
-					public void run() {
-						// TODO Auto-generated method stub
-						if(isEnd) {
-							Log.info("call partial result cleanupTimer");
-							slidingReaminderWindow();
-							// then cancel the timer
-							this.cancel();
-						}
-						isEnd = true;
-						
-					}
-					
-				},30*1000, 20*1000);
-			}
-			isEnd = false;
-		}
-		// 3 types of input: tmall, taobao, payment
-		if( _collector == null) {
-			_collector = collector;
-		}
-		
-		String topic = input.getString(0);
-		Long time = input.getLong(1);
-		double payAmount = input.getDouble(3);
-		
-		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
-				time*60,
-				tmallOrders.get(time) != null? tmallOrders.get(time).size() : 0, 
-				taobaoOrders.get(time) != null? taobaoOrders.get(time).size() : 0, 
-				ordersToBeProcess.get(time) != null?ordersToBeProcess.get(time).size(): 0);*/
-		if (topic.equals(RaceConfig.MqTmallTradeTopic)) {
-			// execute tmall order tuple
-			//Log.info("receive tmallTuples");
-			Long tmallOrderID = input.getLong(2);
-			if( tmallOrders.put(tmallOrderID, payAmount) == null) {
-				//boolean isFound = false;
-				OrderToBeProcess order = ordersToBeProcess.get(tmallOrderID);
-				if (order != null) {
-					// find the tmall order in the payment list
-					//isFound = true;
-					counter.incrementCount(order.time, TradeType.Tmall,
-							order.payAmount);
-				}
-			}		
-			
-		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
-			// execute taobao order tuple
-			//Log.info("receive taobaoTuples");
-			Long taobaoOrderID = input.getLong(2);
-			if( taobaoOrders.put(taobaoOrderID, payAmount) == null) {
-				//boolean isFound = false;
-				OrderToBeProcess order = ordersToBeProcess.get(taobaoOrderID);
-				if (order != null) {
-					// find the tmall order in the payment list
-					//isFound = true;
-					counter.incrementCount(order.time, TradeType.Taobao,
-							order.payAmount);
-				}
-			}
-
-		} else if (topic.equals(RaceConfig.MqPayTopic)) {
-			// execute payment tuple
-			Long orderID = input.getLongByField("orderID");
-			
-			OrderToBeProcess order = ordersToBeProcess.get(orderID);
-			if( order == null) {
-				ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
-				TradeType type = input.getShort(4) == 0 ? TradeType.PC
-						: TradeType.Mobile;
-				counter.incrementCount(time, type, payAmount);
-			}
-			else if(order.addPayAmount(payAmount)) {
-				// need to merge result
-				TradeType type = input.getShort(4) == 0 ? TradeType.PC
-						: TradeType.Mobile;
-				counter.incrementCount(time, type, payAmount);
-			}
-			else {
-				// duplicate
-				Log.info("duplicate payment message:{}:{}", orderID, payAmount);
-				return;
-			}
-			
-			if( tmallOrders.get(orderID) != null) {
-				counter.incrementCount(time, TradeType.Tmall,payAmount);
-			}
-			else if( taobaoOrders.get(orderID) != null) {		
-				counter.incrementCount(time, TradeType.Taobao,payAmount);
-			}
-			/*if( counter.isNeedSlide()) {
-				// need to send partial results tuples
-				PartialResult result = counter.getSlidingPartialResult(ordersToBeProcess);
-				
-				if(result != null) {
-					collector.emit(new Values(result));
-					tmallOrders.remove(result.time - RaceConfig.orderExpiredMinutes);	// remove expired orders
-					taobaoOrders.remove(result.time - RaceConfig.orderExpiredMinutes);
-				}
-			}*/
-			
-		}
 	}
 	
 	public void slidingReaminderWindow() {
@@ -232,6 +108,156 @@ public class PartialResultsBolt implements IBasicBolt {
 			}
 			
 		}
+	}
+
+	@Override
+	public void prepare(Map stormConf, TopologyContext context,
+			OutputCollector collector) {
+		// TODO Auto-generated method stub
+		this._collector = collector;
+		counter = new SlidingWindowCounter(deriveNumWindowChunksFrom(
+				RaceConfig.windowLengthInSeconds, RaceConfig.emitFrequencyInSeconds));
+		//System.out.println("numSlots: " + RaceConfig.windowLengthInSeconds);
+		ordersToBeProcess = new HashMap<Long,OrderToBeProcess>();
+		tmallOrders = new HashMap<Long,Double>();
+		taobaoOrders = new HashMap<Long,Double>();
+	}
+
+	@Override
+	public void execute(Tuple input) {
+		// TODO Auto-generated method stub
+		if(isEnd) {
+			// mark the bolt is continuing
+			if(cleanupTimer == null ) {
+				// check every 30 secs
+				cleanupTimer = new Timer();
+				cleanupTimer.schedule(new TimerTask() {
+
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						if(isEnd) {
+							Log.info("call partial result cleanupTimer");
+							slidingReaminderWindow();
+							// then cancel the timer
+							this.cancel();
+						}
+						isEnd = true;
+						
+					}
+					
+				},30*1000, 10*1000);
+			}
+			isEnd = false;
+		}
+		
+		String topic = input.getString(0);
+		Long time = input.getLong(1);
+		double payAmount = input.getDouble(3);
+		
+		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
+				time*60,
+				tmallOrders.get(time) != null? tmallOrders.get(time).size() : 0, 
+				taobaoOrders.get(time) != null? taobaoOrders.get(time).size() : 0, 
+				ordersToBeProcess.get(time) != null?ordersToBeProcess.get(time).size(): 0);*/
+		if (topic.equals(RaceConfig.MqTmallTradeTopic)) {
+			// execute tmall order tuple
+			//Log.info("receive tmallTuples");
+			Long tmallOrderID = input.getLong(2);
+			if( tmallOrders.put(tmallOrderID, payAmount) == null) {
+				//boolean isFound = false;
+				OrderToBeProcess order = ordersToBeProcess.get(tmallOrderID);
+				if (order != null) {
+					// find the tmall order in the payment list
+					//isFound = true;
+					/*if( order.payAmount == payAmount ) {
+						tmallOrders.remove(tmallOrderID);
+						ordersToBeProcess.remove(tmallOrderID);
+					}*/
+					counter.incrementCount(order.time, TradeType.Tmall,
+							order.payAmount);
+				}
+			}
+			else {
+				Log.error("duplicate Tmall message:{}", time);
+			}
+			
+		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
+			// execute taobao order tuple
+			//Log.info("receive taobaoTuples");
+			Long taobaoOrderID = input.getLong(2);
+			if( taobaoOrders.put(taobaoOrderID, payAmount) == null) {
+				//boolean isFound = false;
+				OrderToBeProcess order = ordersToBeProcess.get(taobaoOrderID);
+				if (order != null) {
+					// find the tmall order in the payment list
+					//isFound = true;
+					/*if( order.payAmount == payAmount ) {
+						taobaoOrders.remove(taobaoOrderID);
+						ordersToBeProcess.remove(taobaoOrderID);
+					}*/
+					counter.incrementCount(order.time, TradeType.Taobao,
+							order.payAmount);
+				}
+			}
+			else {
+				Log.error("duplicate taobao message:{}", time);
+			}
+
+		} else if (topic.equals(RaceConfig.MqPayTopic)) {
+			// execute payment tuple
+			Long orderID = input.getLongByField("orderID");
+			
+			OrderToBeProcess order = ordersToBeProcess.get(orderID);
+			if( order == null) {
+				ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
+				TradeType type = input.getShort(4) == 0 ? TradeType.PC
+						: TradeType.Mobile;
+				counter.incrementCount(time, type, payAmount);
+			}
+			else if(order.addPayAmount(payAmount)) {
+				// need to merge result
+				TradeType type = input.getShort(4) == 0 ? TradeType.PC
+						: TradeType.Mobile;
+				counter.incrementCount(time, type, payAmount);
+			}
+			else {
+				// duplicate
+				Log.error("duplicate payment message:{}:{}:{}", time, payAmount, order.payList);
+				_collector.ack(input);
+				return;
+			}
+			
+			if( tmallOrders.get(orderID) != null) {
+				/*if( tmallOrders.get(orderID) == payAmount ) {
+					tmallOrders.remove(orderID);
+					ordersToBeProcess.remove(orderID);
+				}*/
+				counter.incrementCount(time, TradeType.Tmall,payAmount);
+			}
+			else if( taobaoOrders.get(orderID) != null) {
+				/*if( taobaoOrders.get(orderID) == payAmount ) {
+					taobaoOrders.remove(orderID);
+					ordersToBeProcess.remove(orderID);
+				}*/
+				counter.incrementCount(time, TradeType.Taobao,payAmount);
+			}
+			
+			
+			/*if( counter.isNeedSlide()) {
+				// need to send partial results tuples
+				PartialResult result = counter.getSlidingPartialResult(ordersToBeProcess);
+				
+				if(result != null) {
+					collector.emit(new Values(result));
+					tmallOrders.remove(result.time - RaceConfig.orderExpiredMinutes);	// remove expired orders
+					taobaoOrders.remove(result.time - RaceConfig.orderExpiredMinutes);
+				}
+			}*/
+			
+		}
+		
+		_collector.ack(input);
 	}
 
 }

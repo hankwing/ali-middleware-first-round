@@ -42,15 +42,15 @@ public class RaceTopology {
 		builder.setSpout(RaceConfig.ComponentSpouts,
 				new PaySpout(), RaceConfig.spout_Parallelism_hint);
 
-		builder.setBolt(RaceConfig.ComponentDSBolt,
+		/*builder.setBolt(RaceConfig.ComponentDSBolt,
 				new DSBolt(),
 				RaceConfig.dsBolt_Parallelism_hint)
-				.shuffleGrouping(RaceConfig.ComponentSpouts);
+				.shuffleGrouping(RaceConfig.ComponentSpouts);*/
 		
 		builder.setBolt(RaceConfig.ComponentPartialResultBolt,
 				new PartialResultsBolt(),
 				RaceConfig.middleBolt_Parallelism_hint)
-				.fieldsGrouping(RaceConfig.ComponentDSBolt,
+				.fieldsGrouping(RaceConfig.ComponentSpouts,
 						new Fields("orderID"));
 				/*.fieldsGrouping(RaceConfig.ComponentTaobaoSpout,
 						new Fields("orderID"))

@@ -35,6 +35,7 @@ import com.alibaba.rocketmq.client.consumer.MQPushConsumer;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently;
+import com.alibaba.rocketmq.client.exception.MQClientException;
 import com.alibaba.rocketmq.common.consumer.ConsumeFromWhere;
 import com.alibaba.rocketmq.common.message.MessageExt;
 
@@ -79,14 +80,13 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 			consumer.registerMessageListener(this);
-			consumer.setConsumeMessageBatchMaxSize(100);
-			consumer.start();
+			
 		} catch (Exception e) {
 			LOG.error("Failed to create Meta Consumer ", e);
 			throw new RuntimeException("Failed to create MetaConsumer" + id, e);
 		}
 
-		LOG.info("Successfully init " + id); 
+		LOG.info("Successfully init " + id);
 
 	}
 
@@ -113,14 +113,15 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	}
 
 	public void sendTuple(MetaTuple metaTuple) {
-		//metaTuple.updateEmitMs();
+		metaTuple.updateEmitMs();
 		
 		for (MessageExt me : metaTuple.getMsgList()) {
 			// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
 			
 			String topic = me.getTopic();
 			byte[] body = me.getBody();
-			if ( body.length < 3) {
+			if ( body!= null && body.length == 2 && body[0] == 0
+					&& body[1] == 0) {
 				// Info: 生产者停止生成数据, 并不意味着马上结束
 				suicide ++;
 				LOG.info("receive stop signs:{}, {}times", body, suicide );
@@ -165,6 +166,13 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	@Override
 	public void nextTuple() {
 
+		try {
+
+			consumer.start();
+		} catch (MQClientException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		MetaTuple metaTuple = null;
 		try {
 			metaTuple = sendingQueue.take();
@@ -183,7 +191,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("data","topic"));
+		declarer.declare(new Fields("topic","createTime","orderID","payAmount","payPlatform"));
 	}
 
 	@Override
@@ -203,7 +211,47 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			for (MessageExt me : msgs) {
 				// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
 				
-				collector.emit(new Values(me.getBody(), me.getTopic()));
+				String topic = me.getTopic();
+				byte[] body = me.getBody();
+				if ( body.length < 3) {
+					// Info: 生产者停止生成数据, 并不意味着马上结束
+					suicide ++;
+					LOG.info("receive stop signs:{}, {}times", body, suicide );
+					/*if(false) {
+						Map conf = Utils.readStormConfig();
+						Client client = 
+								NimbusClient.getConfiguredClient(conf).getClient();
+						KillOptions killOpts = new KillOptions();
+						killOpts.set_wait_secs(120); // time to wait before killing
+						try {
+							client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
+									killOpts);
+						} catch (NotAliveException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (TException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						continue;
+					}*/
+					
+				}else if( topic.equals(RaceConfig.MqPayTopic)) {
+					PaymentMessage paymentMessage = RaceUtils.readKryoObject(
+							PaymentMessage.class, body);
+					collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
+							paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
+							paymentMessage.getPayPlatform()));
+					//LOG.info("emit {}", paymentMessage);
+				}
+				else {
+					
+					OrderMessage orderMessage = RaceUtils.readKryoObject(
+		        			OrderMessage.class, body);
+					collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
+							orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
+					//LOG.info("emit {}", orderMessage);
+				}
 			}
 			//}
 
