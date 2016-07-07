@@ -52,7 +52,7 @@ public class RaceConfig implements Serializable {
     
     public static int spout_Parallelism_hint = 4;
     public static int middleBolt_Parallelism_hint = 8;
-    public static int dsBolt_Parallelism_hint = 8;
+    //public static int dsBolt_Parallelism_hint = 8;
     public static int resultBolt_Parallelism_hint = 1;
     public static int ackBolt_Parallelism_hint = 1;
     public static int worker_Number = 4;
