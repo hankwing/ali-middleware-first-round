@@ -137,7 +137,8 @@ public class PartialResultsBolt implements IRichBolt {
 					public void run() {
 						// TODO Auto-generated method stub
 						if(isEnd) {
-							Log.info("call partial result cleanupTimer");
+							Log.info("call partial result cleanupTimer,remaining tmall orders:{},"
+									+ "remaining taobao orders:{}",tmallOrders.size(),taobaoOrders.size());
 							slidingReaminderWindow();
 							// then cancel the timer
 							this.cancel();
@@ -146,13 +147,13 @@ public class PartialResultsBolt implements IRichBolt {
 						
 					}
 					
-				},30*1000, 10*1000);
+				},30*1000, 30*1000);
 			}
 			isEnd = false;
 		}
 		
 		String topic = input.getString(0);
-		Long time = input.getLong(1);
+		Long time = input.getLong(1) / 1000 /60;
 		double payAmount = input.getDouble(3);
 		
 		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
@@ -170,10 +171,10 @@ public class PartialResultsBolt implements IRichBolt {
 				if (order != null) {
 					// find the tmall order in the payment list
 					//isFound = true;
-					/*if( order.payAmount == payAmount ) {
+					if( order.payAmount == payAmount ) {
 						tmallOrders.remove(tmallOrderID);
-						ordersToBeProcess.remove(tmallOrderID);
-					}*/
+						//ordersToBeProcess.remove(tmallOrderID);
+					}
 					counter.incrementCount(order.time, TradeType.Tmall,
 							order.payAmount);
 				}
@@ -192,10 +193,10 @@ public class PartialResultsBolt implements IRichBolt {
 				if (order != null) {
 					// find the tmall order in the payment list
 					//isFound = true;
-					/*if( order.payAmount == payAmount ) {
+					if( order.payAmount == payAmount ) {
 						taobaoOrders.remove(taobaoOrderID);
-						ordersToBeProcess.remove(taobaoOrderID);
-					}*/
+						//ordersToBeProcess.remove(taobaoOrderID);
+					}
 					counter.incrementCount(order.time, TradeType.Taobao,
 							order.payAmount);
 				}
@@ -229,17 +230,17 @@ public class PartialResultsBolt implements IRichBolt {
 			}
 			
 			if( tmallOrders.get(orderID) != null) {
-				/*if( tmallOrders.get(orderID) == payAmount ) {
+				if( tmallOrders.get(orderID).doubleValue() == payAmount ) {
 					tmallOrders.remove(orderID);
-					ordersToBeProcess.remove(orderID);
-				}*/
+					//ordersToBeProcess.remove(orderID);
+				}
 				counter.incrementCount(time, TradeType.Tmall,payAmount);
 			}
 			else if( taobaoOrders.get(orderID) != null) {
-				/*if( taobaoOrders.get(orderID) == payAmount ) {
+				if( taobaoOrders.get(orderID).doubleValue() == payAmount ) {
 					taobaoOrders.remove(orderID);
-					ordersToBeProcess.remove(orderID);
-				}*/
+					//ordersToBeProcess.remove(orderID);
+				}
 				counter.incrementCount(time, TradeType.Taobao,payAmount);
 			}
 			

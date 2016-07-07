@@ -15,7 +15,7 @@ public class RaceConfig implements Serializable {
 
     //这些jstorm/rocketMq/tair 的集群配置信息，这些配置信息在正式提交代码前会被公布
     public static String JstormTopologyName = "43210ehyps";
-    //public static String MetaConsumerGroup = "43210ehyps0923";	// local test!!
+    //public static String MetaConsumerGroup = "43210ehyps1702";	// local test!!
     public static String MetaConsumerGroup = "43210ehyps";
     public static String MqPayTopic = "MiddlewareRaceTestData_Pay";
     public static String MqTmallTradeTopic = "MiddlewareRaceTestData_TMOrder";
@@ -50,13 +50,13 @@ public class RaceConfig implements Serializable {
     public static int windowLengthInSeconds = 120;
     public static int emitFrequencyInSeconds = 1;
     
-    public static int spout_Parallelism_hint = 4;
-    public static int middleBolt_Parallelism_hint = 8;
-    //public static int dsBolt_Parallelism_hint = 8;
+    public static int spout_Parallelism_hint = 1;
+    public static int middleBolt_Parallelism_hint = 4;
+    public static int dsBolt_Parallelism_hint = 4;
     public static int resultBolt_Parallelism_hint = 1;
-    public static int ackBolt_Parallelism_hint = 1;
+    public static int ackBolt_Parallelism_hint = 0;
     public static int worker_Number = 4;
-    public static int max_Spout_Pending = 10*1024;
+    public static int max_Spout_Pending = 100;
     
     public static int slidingThreshold = 100;
     public static int emit_One_Time = 100;

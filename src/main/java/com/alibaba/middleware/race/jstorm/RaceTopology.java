@@ -16,6 +16,7 @@ import com.alibaba.middleware.components.TaobaoSpoutPull;
 import com.alibaba.middleware.components.TmallSpout;
 import com.alibaba.middleware.components.TmallSpoutPull;
 import com.alibaba.middleware.race.RaceConfig;
+import com.alibaba.rocketmq.storm.bolt.RocketMqBolt;
 import com.alibaba.rocketmq.storm.domain.RocketMQConfig;
 import com.alibaba.rocketmq.storm.internal.tools.ConfigUtils;
 import com.alibaba.rocketmq.storm.spout.BatchMessageSpout;
@@ -42,20 +43,17 @@ public class RaceTopology {
 		builder.setSpout(RaceConfig.ComponentSpouts,
 				new PaySpout(), RaceConfig.spout_Parallelism_hint);
 
-		/*builder.setBolt(RaceConfig.ComponentDSBolt,
+		builder.setBolt(RaceConfig.ComponentDSBolt,
 				new DSBolt(),
 				RaceConfig.dsBolt_Parallelism_hint)
-				.shuffleGrouping(RaceConfig.ComponentSpouts);*/
+				.shuffleGrouping(RaceConfig.ComponentSpouts);
 		
 		builder.setBolt(RaceConfig.ComponentPartialResultBolt,
 				new PartialResultsBolt(),
 				RaceConfig.middleBolt_Parallelism_hint)
-				.fieldsGrouping(RaceConfig.ComponentSpouts,
+				.fieldsGrouping(RaceConfig.ComponentDSBolt,
 						new Fields("orderID"));
-				/*.fieldsGrouping(RaceConfig.ComponentTaobaoSpout,
-						new Fields("orderID"))
-				.fieldsGrouping(RaceConfig.ComponentPaymentSpout,
-						new Fields("orderID"));*/
+
 		builder.setBolt(RaceConfig.ComponentResultBolt,
 				new MergeResultsBolt(RaceConfig.windowLengthInSeconds),
 				RaceConfig.resultBolt_Parallelism_hint).globalGrouping(

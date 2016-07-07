@@ -54,7 +54,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	protected boolean autoAck;
 	private int suicide = 0;
 
-	protected transient LinkedBlockingDeque<MetaTuple> sendingQueue;
+	protected transient LinkedBlockingDeque<List<MessageExt>> sendingQueue;
 
 	public PaySpout() {
 
@@ -65,7 +65,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			SpoutOutputCollector collector) {
 		this.conf = conf;
 		this.collector = collector;
-		this.sendingQueue = new LinkedBlockingDeque<MetaTuple>();
+		this.sendingQueue = new LinkedBlockingDeque<List<MessageExt>>( 100000);
 		
 		flowControl = false;
 		autoAck = true;
@@ -79,8 +79,9 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
+			//consumer.setConsumeMessageBatchMaxSize(100);
 			consumer.registerMessageListener(this);
-			
+			consumer.start();
 		} catch (Exception e) {
 			LOG.error("Failed to create Meta Consumer ", e);
 			throw new RuntimeException("Failed to create MetaConsumer" + id, e);
@@ -113,7 +114,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	}
 
 	public void sendTuple(MetaTuple metaTuple) {
-		metaTuple.updateEmitMs();
+		//metaTuple.updateEmitMs();
 		
 		for (MessageExt me : metaTuple.getMsgList()) {
 			// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
@@ -166,14 +167,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 	@Override
 	public void nextTuple() {
 
-		try {
-
-			consumer.start();
-		} catch (MQClientException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		MetaTuple metaTuple = null;
+		List<MessageExt> metaTuple = null;
 		try {
 			metaTuple = sendingQueue.take();
 		} catch (InterruptedException e) {
@@ -184,14 +178,19 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		if (metaTuple == null) {
 			return;
 		}
-
-		sendTuple(metaTuple);
+		for( MessageExt me: metaTuple) {
+			collector.emit(new Values(me.getTopic(),me.getBody()));
+		}
+		
+		//sendTuple(metaTuple);
 
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("topic","createTime","orderID","payAmount","payPlatform"));
+		//declarer.declare(new Fields("topic","createTime","orderID","payAmount","payPlatform"));
+		declarer.declare(new Fields("topic","data"));
+		
 	}
 
 	@Override
@@ -206,9 +205,9 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			//MetaTuple metaTuple = new MetaTuple(msgs, context.getMessageQueue());
 
 			//if (flowControl) {
-			//	sendingQueue.offer(metaTuple);
+				sendingQueue.put(msgs);
 			//} else {
-			for (MessageExt me : msgs) {
+			/*for (MessageExt me : msgs) {
 				// 消费每条消息，如果消费失败，比如更新数据库失败，就重新再拉一次消息
 				
 				String topic = me.getTopic();
@@ -217,24 +216,6 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 					// Info: 生产者停止生成数据, 并不意味着马上结束
 					suicide ++;
 					LOG.info("receive stop signs:{}, {}times", body, suicide );
-					/*if(false) {
-						Map conf = Utils.readStormConfig();
-						Client client = 
-								NimbusClient.getConfiguredClient(conf).getClient();
-						KillOptions killOpts = new KillOptions();
-						killOpts.set_wait_secs(120); // time to wait before killing
-						try {
-							client.killTopologyWithOpts(RaceConfig.JstormTopologyName,
-									killOpts);
-						} catch (NotAliveException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (TException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						continue;
-					}*/
 					
 				}else if( topic.equals(RaceConfig.MqPayTopic)) {
 					PaymentMessage paymentMessage = RaceUtils.readKryoObject(
@@ -252,7 +233,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 							orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
 					//LOG.info("emit {}", orderMessage);
 				}
-			}
+			}*/
 			//}
 
 			//if (autoAck) {

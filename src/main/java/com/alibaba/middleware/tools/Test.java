@@ -16,6 +16,11 @@ public class Test {
 	
 	public static void main( String[] args) {
 		
+		Double temp = 0.0;
+		double temp2 = 0;
+		if( temp.doubleValue() == temp2) {
+			System.out.println("heh");
+		}
 		/*List<String> confServers = new ArrayList<String>();
 		confServers.add("192.168.52.128:5198"); 
 	//	confServers.add("10.10.7.144:51980"); // 可选
@@ -30,7 +35,7 @@ public class Test {
 		tairManager.init();*/
 		
 		
-		List<String> confServers = new ArrayList<String>();
+		/*List<String> confServers = new ArrayList<String>();
 		confServers.add(RaceConfig.TairConfigServer);
 		confServers.add(RaceConfig.TairSalveConfigServer);
 
@@ -49,7 +54,7 @@ public class Test {
 			System.out.println("tair write success!");
 			DataEntry resultTmall = tairManager.get(0, RaceConfig.prex_tmall + 0).getValue();
 			System.out.println(resultTmall.getValue());
-		}
+		}*/
 		/*for( long time = 1466326740; time < 1466337361; time += 60) {
 			
 			DataEntry resultTmall = tairManager.get(0, RaceConfig.prex_tmall + time).getValue();

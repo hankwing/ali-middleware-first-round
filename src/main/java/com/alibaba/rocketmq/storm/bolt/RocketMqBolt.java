@@ -30,7 +30,7 @@ public class RocketMqBolt implements IRichBolt {
     @Override
     public void execute(Tuple input) {
         Object msgObj = input.getValue(0);
-        Object msgStat = input.getValue(1);
+        //Object msgStat = input.getValue(1);
         /*try {
             LOG.info("Messages:" + msgObj + "\n statistics:" + msgStat);
 

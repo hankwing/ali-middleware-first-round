@@ -53,16 +53,16 @@ public class DSBolt implements IBasicBolt {
 	@Override
 	public void execute(Tuple input, BasicOutputCollector collector) {
 		// TODO Auto-generated method stub
-		String topic = input.getString(1);
-		byte[] body = (byte[]) input.getValue(0);
-		if ( body.length < 3) {
+		String topic = input.getString(0);
+		byte[] body = (byte[]) input.getValue(1);
+		if ( body.length ==2 && body[0] == 0) {
 			// Info: 生产者停止生成数据, 并不意味着马上结束
 			LOG.info("receive stop signs:{}", body );
 			
 		}else if( topic.equals(RaceConfig.MqPayTopic)) {
 			PaymentMessage paymentMessage = RaceUtils.readKryoObject(
 					PaymentMessage.class, body);
-			collector.emit(new Values(topic,paymentMessage.getCreateTime()/ 1000/ 60,
+			collector.emit(new Values(topic,paymentMessage.getCreateTime(),
 					paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
 					paymentMessage.getPayPlatform()));
 			//LOG.info("emit {}", paymentMessage);
@@ -71,7 +71,7 @@ public class DSBolt implements IBasicBolt {
 			
 			OrderMessage orderMessage = RaceUtils.readKryoObject(
         			OrderMessage.class, body);
-			collector.emit(new Values(topic,orderMessage.getCreateTime()/ 1000/ 60,
+			collector.emit(new Values(topic,orderMessage.getCreateTime(),
 					orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
 			//LOG.info("emit {}", orderMessage);
 		}
