@@ -96,15 +96,16 @@ public class PartialResultsBolt implements IRichBolt {
 		}
 		
 		public boolean addPayAmount( long time, double part) {
-			if( !payList.contains(part)) {
+			//if( payList.contains(part) && times.contains(time)) {
+			//	return false;
 				// duplicate
+				
+			//}
+			//else {
 				times.add(time);
 				payList.add(part);
 				return true;
-			}
-			else {
-				return false;
-			}
+			//}
 			
 		}
 	}
@@ -146,7 +147,7 @@ public class PartialResultsBolt implements IRichBolt {
 						
 					}
 					
-				},30*1000, 15*1000);
+				},30*1000, 30*1000);
 			}
 			isEnd = false;
 		}
@@ -210,7 +211,7 @@ public class PartialResultsBolt implements IRichBolt {
 
 		} else if (topic.equals(RaceConfig.MqPayTopic)) {
 			// execute payment tuple
-			long orderID = input.getLongByField("orderID");
+			long orderID = input.getLong(2);
 			
 			OrderToBeProcess order = ordersToBeProcess.get(orderID);
 			if( order == null) {
@@ -219,18 +220,19 @@ public class PartialResultsBolt implements IRichBolt {
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
-			else if(order.addPayAmount(time, payAmount)) {
+			else {
+				order.addPayAmount(time, payAmount);
 				// need to merge result
 				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
-			else {
+			/*else {
 				// duplicate
-				Log.error("duplicate payment message:{}:{}:{}", time, payAmount, order.payList);
+				Log.error("duplicate payment message:{}:{}:{}:{}", time, payAmount,order.times,order.payList);
 				_collector.ack(input);
 				return;
-			}
+			}*/
 			
 			if( tmallOrders.get(orderID) != null) {
 				counter.incrementCount(time, TradeType.Tmall,payAmount);
