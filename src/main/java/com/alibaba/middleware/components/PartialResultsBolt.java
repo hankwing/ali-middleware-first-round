@@ -96,16 +96,15 @@ public class PartialResultsBolt implements IRichBolt {
 		}
 		
 		public boolean addPayAmount( long time, double part) {
-			//if( payList.contains(part) && times.contains(time)) {
-			//	return false;
-				// duplicate
+			if( payList.contains(part) && times.contains(time)) {
+				return false;
 				
-			//}
-			//else {
+			}
+			else {
 				times.add(time);
 				payList.add(part);
 				return true;
-			//}
+			}
 			
 		}
 	}
@@ -153,7 +152,8 @@ public class PartialResultsBolt implements IRichBolt {
 		}
 		
 		String topic = input.getString(0);
-		long time = input.getLong(1) / 1000 /60;
+		long mtime = input.getLong(1);
+		long time = mtime / 1000 / 60;
 		double payAmount = input.getDouble(3);
 		
 		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
@@ -175,14 +175,14 @@ public class PartialResultsBolt implements IRichBolt {
 						//ordersToBeProcess.remove(tmallOrderID);
 					//}
 					for( int i = 0; i< order.times.size(); i++ ) {
-						counter.incrementCount(order.times.get(i), TradeType.Tmall,
+						counter.incrementCount(order.times.get(i) / 1000 / 60, TradeType.Tmall,
 								order.payList.get(i));
 					}
 					
 				}
 			}
 			else {
-				Log.error("duplicate Tmall message:{}", time);
+				Log.error("duplicate Tmall message:{}", mtime);
 			}
 			
 		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
@@ -200,13 +200,13 @@ public class PartialResultsBolt implements IRichBolt {
 						//ordersToBeProcess.remove(taobaoOrderID);
 					}*/
 					for( int i = 0; i< order.times.size(); i++ ) {
-						counter.incrementCount(order.times.get(i), TradeType.Taobao,
+						counter.incrementCount(order.times.get(i) / 1000 / 60, TradeType.Taobao,
 								order.payList.get(i));
 					}
 				}
 			}
 			else {
-				Log.error("duplicate taobao message:{}", time);
+				Log.error("duplicate taobao message:{}", mtime);
 			}
 
 		} else if (topic.equals(RaceConfig.MqPayTopic)) {
@@ -215,24 +215,24 @@ public class PartialResultsBolt implements IRichBolt {
 			
 			OrderToBeProcess order = ordersToBeProcess.get(orderID);
 			if( order == null) {
-				ordersToBeProcess.put( orderID, new OrderToBeProcess(time,payAmount));
+				ordersToBeProcess.put( orderID, new OrderToBeProcess(mtime,payAmount));
 				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
-			else {
-				order.addPayAmount(time, payAmount);
+			else if(order.addPayAmount(mtime, payAmount)){
+				
 				// need to merge result
 				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
-			/*else {
+			else {
 				// duplicate
-				Log.error("duplicate payment message:{}:{}:{}:{}", time, payAmount,order.times,order.payList);
+				Log.error("duplicate payment message:{}:{}:{}:{}", mtime, payAmount,order.times,order.payList);
 				_collector.ack(input);
 				return;
-			}*/
+			}
 			
 			if( tmallOrders.get(orderID) != null) {
 				counter.incrementCount(time, TradeType.Tmall,payAmount);
