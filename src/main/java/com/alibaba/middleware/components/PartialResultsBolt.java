@@ -85,22 +85,21 @@ public class PartialResultsBolt implements IRichBolt {
 
 	public static class OrderToBeProcess {
 
-		public Long time = 0L;
-		public double payAmount = 0;
 		public List<Double> payList = null;
+		public List<Long> times = null;
 
-		public OrderToBeProcess(Long time, double payAmount) {
-			this.time = time;
-			this.payAmount = payAmount;
+		public OrderToBeProcess(long time, double payAmount) {
 			payList = new ArrayList<Double>();
+			times = new ArrayList<Long>();
+			times.add(time);
 			payList.add(payAmount);
 		}
 		
-		public boolean addPayAmount( double part) {
+		public boolean addPayAmount( long time, double part) {
 			if( !payList.contains(part)) {
 				// duplicate
+				times.add(time);
 				payList.add(part);
-				payAmount += part;
 				return true;
 			}
 			else {
@@ -147,13 +146,13 @@ public class PartialResultsBolt implements IRichBolt {
 						
 					}
 					
-				},30*1000, 30*1000);
+				},30*1000, 15*1000);
 			}
 			isEnd = false;
 		}
 		
 		String topic = input.getString(0);
-		Long time = input.getLong(1) / 1000 /60;
+		long time = input.getLong(1) / 1000 /60;
 		double payAmount = input.getDouble(3);
 		
 		/*Log.info("Time:{} ,TmallorderCount is {}, TaobaoOrderCount is {}, PayOrderCount is {}", 
@@ -163,20 +162,22 @@ public class PartialResultsBolt implements IRichBolt {
 				ordersToBeProcess.get(time) != null?ordersToBeProcess.get(time).size(): 0);*/
 		if (topic.equals(RaceConfig.MqTmallTradeTopic)) {
 			// execute tmall order tuple
-			//Log.info("receive tmallTuples");
-			Long tmallOrderID = input.getLong(2);
+			long tmallOrderID = input.getLong(2);
 			if( tmallOrders.put(tmallOrderID, payAmount) == null) {
 				//boolean isFound = false;
 				OrderToBeProcess order = ordersToBeProcess.get(tmallOrderID);
 				if (order != null) {
 					// find the tmall order in the payment list
 					//isFound = true;
-					if( order.payAmount == payAmount ) {
-						tmallOrders.remove(tmallOrderID);
+					//if( order.payAmount == payAmount ) {
+						//tmallOrders.remove(tmallOrderID);
 						//ordersToBeProcess.remove(tmallOrderID);
+					//}
+					for( int i = 0; i< order.times.size(); i++ ) {
+						counter.incrementCount(order.times.get(i), TradeType.Tmall,
+								order.payList.get(i));
 					}
-					counter.incrementCount(order.time, TradeType.Tmall,
-							order.payAmount);
+					
 				}
 			}
 			else {
@@ -186,19 +187,21 @@ public class PartialResultsBolt implements IRichBolt {
 		} else if (topic.equals(RaceConfig.MqTaobaoTradeTopic)) {
 			// execute taobao order tuple
 			//Log.info("receive taobaoTuples");
-			Long taobaoOrderID = input.getLong(2);
+			long taobaoOrderID = input.getLong(2);
 			if( taobaoOrders.put(taobaoOrderID, payAmount) == null) {
 				//boolean isFound = false;
 				OrderToBeProcess order = ordersToBeProcess.get(taobaoOrderID);
 				if (order != null) {
 					// find the tmall order in the payment list
 					//isFound = true;
-					if( order.payAmount == payAmount ) {
+					/*if( order.payAmount == payAmount ) {
 						taobaoOrders.remove(taobaoOrderID);
 						//ordersToBeProcess.remove(taobaoOrderID);
+					}*/
+					for( int i = 0; i< order.times.size(); i++ ) {
+						counter.incrementCount(order.times.get(i), TradeType.Taobao,
+								order.payList.get(i));
 					}
-					counter.incrementCount(order.time, TradeType.Taobao,
-							order.payAmount);
 				}
 			}
 			else {
@@ -207,7 +210,7 @@ public class PartialResultsBolt implements IRichBolt {
 
 		} else if (topic.equals(RaceConfig.MqPayTopic)) {
 			// execute payment tuple
-			Long orderID = input.getLongByField("orderID");
+			long orderID = input.getLongByField("orderID");
 			
 			OrderToBeProcess order = ordersToBeProcess.get(orderID);
 			if( order == null) {
@@ -216,7 +219,7 @@ public class PartialResultsBolt implements IRichBolt {
 						: TradeType.Mobile;
 				counter.incrementCount(time, type, payAmount);
 			}
-			else if(order.addPayAmount(payAmount)) {
+			else if(order.addPayAmount(time, payAmount)) {
 				// need to merge result
 				TradeType type = input.getShort(4) == 0 ? TradeType.PC
 						: TradeType.Mobile;
@@ -230,17 +233,9 @@ public class PartialResultsBolt implements IRichBolt {
 			}
 			
 			if( tmallOrders.get(orderID) != null) {
-				if( tmallOrders.get(orderID).doubleValue() == payAmount ) {
-					tmallOrders.remove(orderID);
-					//ordersToBeProcess.remove(orderID);
-				}
 				counter.incrementCount(time, TradeType.Tmall,payAmount);
 			}
 			else if( taobaoOrders.get(orderID) != null) {
-				if( taobaoOrders.get(orderID).doubleValue() == payAmount ) {
-					taobaoOrders.remove(orderID);
-					//ordersToBeProcess.remove(orderID);
-				}
 				counter.incrementCount(time, TradeType.Taobao,payAmount);
 			}
 			

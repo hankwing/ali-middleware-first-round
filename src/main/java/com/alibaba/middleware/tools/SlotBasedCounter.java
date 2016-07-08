@@ -60,7 +60,7 @@ public final class SlotBasedCounter implements Serializable {
 	 * @param trade
 	 * @return
 	 */
-	public void incrementTrade(Long time, TradeType type,double trade) {
+	public void incrementTrade(long time, TradeType type,double trade) {
 
 		PartialResult partial = timeToResults.get(time);
 		if (partial == null) {

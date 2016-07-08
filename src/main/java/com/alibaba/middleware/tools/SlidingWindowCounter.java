@@ -33,7 +33,7 @@ public final class SlidingWindowCounter implements Serializable {
 	 * @param trade
 	 * @return
 	 */
-	public void incrementCount(Long time, TradeType type, double trade) {
+	public void incrementCount(long time, TradeType type, double trade) {
 		objCounter.incrementTrade(time, type, trade);
 	}
 	
