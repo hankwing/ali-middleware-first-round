@@ -120,12 +120,31 @@ public class PartialResultsBolt implements IRichBolt {
 		ordersToBeProcess = new HashMap<Long,OrderToBeProcess>();
 		tmallOrders = new HashMap<Long,Double>();
 		taobaoOrders = new HashMap<Long,Double>();
+		
+		cleanupTimer = new Timer();
+		cleanupTimer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				//if(isEnd) {
+					Log.info("call partial result cleanupTimer,remaining tmall orders:{},"
+							+ "remaining taobao orders:{}",tmallOrders.size(),taobaoOrders.size());
+					slidingReaminderWindow();
+					// then cancel the timer
+					//this.cancel();
+				//}
+				//isEnd = true;
+				
+			}
+			
+		},60*1000, 15*1000);
 	}
 
 	@Override
 	public void execute(Tuple input) {
 		// TODO Auto-generated method stub
-		if(isEnd) {
+		/*if(isEnd) {
 			// mark the bolt is continuing
 			if(cleanupTimer == null ) {
 				// check every 30 secs
@@ -149,7 +168,7 @@ public class PartialResultsBolt implements IRichBolt {
 				},30*1000, 30*1000);
 			}
 			isEnd = false;
-		}
+		}*/
 		
 		String topic = input.getString(0);
 		long mtime = input.getLong(1);

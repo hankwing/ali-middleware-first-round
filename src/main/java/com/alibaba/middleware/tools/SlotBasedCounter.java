@@ -174,7 +174,12 @@ public final class SlotBasedCounter implements Serializable {
 		int i,j = 0;
 		LOG.info( "times count:{}",times.size());
 		for( Long time : times) {
-			remainders.add( timeToResults.get(time));
+			try {
+				remainders.add( (PartialResult) timeToResults.get(time).clone());
+			} catch (CloneNotSupportedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			//wipeSlot(time);
 		}
 		for( i = 0; i < remainders.size()-1 ; i++) {

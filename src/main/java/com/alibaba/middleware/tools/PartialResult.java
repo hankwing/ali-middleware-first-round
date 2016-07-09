@@ -6,7 +6,7 @@ public class PartialResult extends Object implements Cloneable{
 	public double taobaoTrade = 0;
 	public double PC = 0;
 	public double mobile = 0;
-	public long time = 0L;
+	public long time = 0;
 	
 	@Override
 	protected Object clone() throws CloneNotSupportedException {

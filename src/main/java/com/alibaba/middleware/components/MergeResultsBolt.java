@@ -41,6 +41,7 @@ public class MergeResultsBolt implements IBasicBolt {
 	private FileOutputStream fos = null;
 	private TopologyContext context = null;
 	private Map<Long, List<PartialResult>> resultList = null;
+	private Map<Long, PartialResult> allResultList = null;
 	private int numberOfPartialResults = 0;
 	private int numSlots = 0;
 	private DefaultTairManager tairManager = null;
@@ -66,6 +67,7 @@ public class MergeResultsBolt implements IBasicBolt {
 		// TODO Auto-generated method stub
 		this.context = context;
 		resultList = new HashMap<Long, List<PartialResult>>();
+		allResultList = new HashMap<Long, PartialResult>();
 		numberOfPartialResults = context.getComponentTasks
 				(RaceConfig.ComponentPartialResultBolt).size();
 		
@@ -112,31 +114,59 @@ public class MergeResultsBolt implements IBasicBolt {
 		
 		if( partResults.size() >= numberOfPartialResults) {
 			// get results of the minute
-			Double tmallTrade = 0.0;
-			Double taobaoTrade = 0.0;
-			Double PC = 0.0;
-			Double Mobile = 0.0;
+			double tmallTrade = 0.0;
+			double taobaoTrade = 0.0;
+			double PC = 0.0;
+			double Mobile = 0.0;
 			for(PartialResult temp : partResults) {
 				tmallTrade += temp.tmallTrade;
 				taobaoTrade += temp.taobaoTrade;
 				PC += temp.PC;
 				Mobile += temp.mobile;
 			}
-			//try {
+
+			boolean isNeedEmit = true;
+			PartialResult oldResult = allResultList.get(result.time);
+			if( oldResult == null) {
+				oldResult = new PartialResult( result.time, tmallTrade, taobaoTrade, PC,Mobile);
+				allResultList.put(result.time, oldResult);
+			}
+			else if( oldResult.tmallTrade == tmallTrade 
+					&& oldResult.taobaoTrade == taobaoTrade && oldResult.PC == PC &&
+					oldResult.mobile == Mobile ){
+				// duplicate
+				isNeedEmit = false;
+				LOG.info("duplicate results!");
+				
+			}
+			else {
+				// update all result
+				oldResult.tmallTrade = tmallTrade;
+				oldResult.taobaoTrade = taobaoTrade;
+				oldResult.PC = PC;
+				oldResult.mobile = Mobile;
+			}
+				
+			if( isNeedEmit ) {
 				Long time = result.time * 60;
 				
-				/*writer.write("key: " + RaceConfig.prex_tmall + 
-						time + " value:" + String.format("%.2f",tmallTrade) + "\n");
-				writer.write("key: " + RaceConfig.prex_taobao + 
-						time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
-				writer.write("key: " + RaceConfig.prex_ratio + 
-						time + "mobile_value:" + String.format("%.2f",Mobile) + "\n");
-				writer.write("key: " + RaceConfig.prex_ratio + 
-						time + "pc_value:" + String.format("%.2f",PC) + "\n");
-				writer.write("key: " + RaceConfig.prex_ratio + 
-						time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
-				
-				writer.flush();*/
+				/*try {
+					writer.write("key: " + RaceConfig.prex_tmall + 
+							time + " value:" + String.format("%.2f",tmallTrade) + "\n");
+					writer.write("key: " + RaceConfig.prex_taobao + 
+							time + " value:" + String.format("%.2f",taobaoTrade) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + "mobile_value:" + String.format("%.2f",Mobile) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + "pc_value:" + String.format("%.2f",PC) + "\n");
+					writer.write("key: " + RaceConfig.prex_ratio + 
+							time + " value:" + String.format("%.2f",Mobile / PC) + "\n\n");
+					
+					writer.flush();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}*/
 				
 				ResultCode rc1 = tairManager.put(RaceConfig.TairNamespace, RaceConfig.prex_tmall + 
 						time, String.format("%.2f",tmallTrade));
@@ -161,11 +191,8 @@ public class MergeResultsBolt implements IBasicBolt {
 				    // 其他失败的处理代码
 					LOG.info("tair failed because other reasons!!:");
 				}
-			/*}catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-			}*/
-				
+
+			}
 			resultList.remove(result.time);
 			
 		}
