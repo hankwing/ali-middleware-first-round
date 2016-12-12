@@ -79,7 +79,7 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 			consumer.subscribe(RaceConfig.MqTaobaoTradeTopic, "*");
 			consumer.subscribe(RaceConfig.MqTmallTradeTopic, "*");
 			consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-			//consumer.setConsumeMessageBatchMaxSize(100);
+			consumer.setConsumeMessageBatchMaxSize(100);
 			consumer.registerMessageListener(this);
 			consumer.start();
 		} catch (Exception e) {
@@ -178,9 +178,9 @@ public class PaySpout implements IRichSpout,MessageListenerConcurrently {
 		if (metaTuple == null) {
 			return;
 		}
-		for( MessageExt me: metaTuple) {
-			collector.emit(new Values(me.getTopic(),me.getBody()));
-		}
+		//for( MessageExt me: metaTuple) {
+			collector.emit(new Values(metaTuple.get(0).getTopic(),metaTuple));
+		//}
 		
 		//sendTuple(metaTuple);
 

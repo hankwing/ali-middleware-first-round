@@ -17,7 +17,9 @@ import com.alibaba.middleware.race.RaceConfig;
 import com.alibaba.middleware.race.RaceUtils;
 import com.alibaba.middleware.race.model.OrderMessage;
 import com.alibaba.middleware.race.model.PaymentMessage;
+import com.alibaba.rocketmq.common.message.MessageExt;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,26 +56,31 @@ public class DSBolt implements IBasicBolt {
 	public void execute(Tuple input, BasicOutputCollector collector) {
 		// TODO Auto-generated method stub
 		String topic = input.getString(0);
-		byte[] body = (byte[]) input.getValue(1);
-		if ( body.length ==2 && body[0] == 0) {
-			// Info: 生产者停止生成数据, 并不意味着马上结束
-			LOG.info("receive stop signs:{}", body );
-			
-		}else if( topic.equals(RaceConfig.MqPayTopic)) {
-			PaymentMessage paymentMessage = RaceUtils.readKryoObject(
-					PaymentMessage.class, body);
-			collector.emit(new Values(topic,paymentMessage.getCreateTime(),
-					paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
-					paymentMessage.getPayPlatform()));
-			//LOG.info("emit {}", paymentMessage);
+		List<MessageExt> meList = (List<MessageExt>) input.getValue(1);
+		byte[] body = null;
+		for( MessageExt message: meList) {
+			body = message.getBody();
+			if ( body.length ==2 && body[0] == 0) {
+				// Info: 生产者停止生成数据, 并不意味着马上结束
+				LOG.info("receive stop signs:{}", body );
+				
+			}else if( topic.equals(RaceConfig.MqPayTopic)) {
+				PaymentMessage paymentMessage = RaceUtils.readKryoObject(
+						PaymentMessage.class, body);
+				collector.emit(new Values(topic,paymentMessage.getCreateTime(),
+						paymentMessage.getOrderId(),paymentMessage.getPayAmount(),
+						paymentMessage.getPayPlatform()));
+				//LOG.info("emit {}", paymentMessage);
+			}
+			else {
+				
+				OrderMessage orderMessage = RaceUtils.readKryoObject(
+	        			OrderMessage.class, body);
+				collector.emit(new Values(topic,orderMessage.getCreateTime(),
+						orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
+				//LOG.info("emit {}", orderMessage);
+			}
 		}
-		else {
-			
-			OrderMessage orderMessage = RaceUtils.readKryoObject(
-        			OrderMessage.class, body);
-			collector.emit(new Values(topic,orderMessage.getCreateTime(),
-					orderMessage.getOrderId(),orderMessage.getTotalPrice(),0));
-			//LOG.info("emit {}", orderMessage);
-		}
+		
 	}
 }
